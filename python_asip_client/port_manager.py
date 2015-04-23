@@ -30,6 +30,12 @@ class PortManager:
 
     # ************ BEGIN PUBLIC METHODS *************
 
+    def return_high(self):
+        return self.__HIGH
+
+    def return_low(self):
+        return self.__LOW
+
     # I'm not sure we want this public... FIXME?
     def get_digital_pins(self):
         return self.__digital_input_pins
@@ -98,7 +104,7 @@ class PortManager:
         bitmask = int(input_str[7:7], 16)  # convert to base 16
 
         if self.__DEBUG:
-            sys.stdout.write("DEBUG: process_port_data for port " + port + " and bitmask " + bitmask)
+            sys.stdout.write("DEBUG: process_port_data for port " + str(port) + " and bitmask " + str(bitmask))
 
         single_port_map = self.__port_mapping[port] # map extraction for given port
 

@@ -39,8 +39,6 @@ class AsipClient:
     ERROR_MESSAGE_HEADER = '~'  # Incoming message: error report
     DEBUG_MESSAGE_HEADER = '!'  # A debug message from the board (can be ignored, probably)
 
-    HIGH = 1
-    LOW = 0
     # ************   END CONSTANTS DEFINITION ****************
 
     # ************   BEGIN PRIVATE FIELDS DEFINITION ****************
@@ -113,14 +111,15 @@ class AsipClient:
         return self.__port_map.analog_read(pin)
 
     def set_pin_mode(self, pin, mode):
-        self.__out.write(self.IO_SERVICE + "," + self.PIN_MODE + "," + pin + "," + mode + "\n")
+        #self.__out.write(self.IO_SERVICE + "," + self.PIN_MODE + "," + pin + "," + mode + "\n")
+        self.__out.write("{},{},{},{}\n".format(self.IO_SERVICE, self.PIN_MODE, pin, mode))
         if self.DEBUG:
             sys.stdout.write(
                 "DEBUG: Setting pin mode with " + self.IO_SERVICE + "," + self.PIN_MODE + "," + pin + "," + mode)
 
     # A method to write to a digital pin
     def digital_write(self, pin, value):
-        self.__out.write(self.IO_SERVICE + "," + self.DIGITAL_WRITE + "," + pin + "," + value + "\n")
+        self.__out.write(self.IO_SERVICE + "," + self.DIGITAL_WRITE + "," + str(pin) + "," + str(value) + "\n")
         if self.DEBUG:
             sys.stdout.write(
                 "DEBUG: Setting digital pin with " + self.IO_SERVICE + "," + self.DIGITAL_WRITE + "," + pin + "," + value)
@@ -221,7 +220,6 @@ class AsipClient:
     def __handle_debug_event(self, input_str):
         if self.DEBUG:
             sys.stdout.write("DEBUG: " + input_str)
-
 
     # ************ END PRIVATE METHODS *************/
 
