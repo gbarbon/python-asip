@@ -7,7 +7,7 @@ import time
 
 class SimpleBlink(SimpleSerialBoard):
 
-    __DEBUG = False
+    __DEBUG = True
 
     #def __init__(self, port):
     #    super(port)

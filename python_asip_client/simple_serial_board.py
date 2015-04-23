@@ -42,7 +42,7 @@ class SimpleSerialBoard:
 
         # FIXME: very simple implementation!
         # self.serial_port = SerialPort(port) # class serial port does not exist
-        self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
+        self.ser_conn = Serial(port='/dev/cu.usbmodemfa131', baudrate=57600)
         self.asip = AsipClient(self.SimpleWriter(self))
 
         # try:
@@ -151,13 +151,13 @@ class SimpleSerialBoard:
             while True:
                 # num = random.choice(nums)
                 if self.DEBUG:
-                    sys.stdout.write("DEBUG: Temp buff is now ", temp_buff)
+                    sys.stdout.write("DEBUG: Temp buff is now {}".format(temp_buff))
                 val = self.ser_conn.readline()
                 if self.DEBUG:
-                    sys.stdout.write("DEBUG: val value when retrieving from serial is %s" % (val))
+                    sys.stdout.write("DEBUG: val value when retrieving from serial is {}".format(val))
                 val = val.decode('utf-8')
                 if self.DEBUG:
-                    sys.stdout.write("DEBUG: val value after decode is %s" % (val))
+                    sys.stdout.write("DEBUG: val value after decode is {}".format(val))
                 # if val != None:
                 if val != None and val!="\n":
                     if "\n" in val:
@@ -169,20 +169,20 @@ class SimpleSerialBoard:
                             temp_buff += (val[0:val.index("\n")])
                             self.queue.put(temp_buff)
                             if self.DEBUG:
-                                sys.stdout.write("DEBUG: Serial produced %s" % (temp_buff))
+                                sys.stdout.write("DEBUG: Serial produced {}".format(temp_buff))
                             temp_buff = ""
                             val = val[val.index("\n")+1:]
                             if self.DEBUG:
-                                sys.stdout.write("DEBUG: Now val is ", val)
+                                sys.stdout.write("DEBUG: Now val is {}".format(val))
                             # self.asip.process_input()
                         if len(val)>0:
                             temp_buff = val
                         if self.DEBUG:
-                            sys.stdout.write("DEBUG: After internal while buffer is", temp_buff)
+                            sys.stdout.write("DEBUG: After internal while buffer is {}".format(temp_buff))
                     else:
                         temp_buff += val
                         if self.DEBUG:
-                            sys.stdout.write("DEBUG: else case, buff is equal to val, so they are", temp_buff)
+                            sys.stdout.write("DEBUG: else case, buff is equal to val, so they are {}".format(temp_buff))
                 #time.sleep(random.random())
 
 

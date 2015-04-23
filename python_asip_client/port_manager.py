@@ -5,7 +5,7 @@ import sys
 class PortManager:
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
-    __DEBUG = False # Do you want me to print verbose debug information?
+    __DEBUG = True # Do you want me to print verbose debug information?
 
     __MAX_NUM_DIGITAL_PINS = 72  # 9 ports of 8 pins at most?
     __MAX_NUM_ANALOG_PINS = 16  # Just a random number...
@@ -30,10 +30,10 @@ class PortManager:
 
     # ************ BEGIN PUBLIC METHODS *************
 
-    def return_high(self):
+    def high_value(self):
         return self.__HIGH
 
-    def return_low(self):
+    def low_value(self):
         return self.__LOW
 
     # I'm not sure we want this public... FIXME?
@@ -89,8 +89,9 @@ class PortManager:
             curr_pin += 1
 
         if self.__DEBUG:
-            sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: ")
-            sys.stdout.write("DEBUG: " + str(self.__port_mapping))
+            #sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: ")
+            #sys.stdout.write("DEBUG: " + str(self.__port_mapping))
+            sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: {}".format(self.__port_mapping))
 
     # Method called every time a 'variation' in a pin is detected.
     # It process input messages for digital pins. We get a port and a sequence of bits.
@@ -104,7 +105,8 @@ class PortManager:
         bitmask = int(input_str[7:7], 16)  # convert to base 16
 
         if self.__DEBUG:
-            sys.stdout.write("DEBUG: process_port_data for port " + str(port) + " and bitmask " + str(bitmask))
+            # sys.stdout.write("DEBUG: process_port_data for port " + str(port) + " and bitmask " + str(bitmask))
+            sys.stdout.write("DEBUG: process_port_data for port {} and bitmask {}".format(port,bitmask))
 
         single_port_map = self.__port_mapping[port] # map extraction for given port
 
@@ -112,16 +114,19 @@ class PortManager:
             if (key & bitmask) != 0x0:
                 self.__digital_input_pins[value] = self.__HIGH
                 if self.__DEBUG:
-                    sys.stdout.write("DEBUG: processPortData setting pin " + value + " to HIGH")
+                    # sys.stdout.write("DEBUG: processPortData setting pin " + value + " to HIGH")
+                    sys.stdout.write("DEBUG: processPortData setting pin {} to HIGH".format(value))
             else:
                 self.__digital_input_pins[value] = self.__LOW
                 if self.__DEBUG:
-                    sys.stdout.write("DEBUG: processPortData setting pin " + value + " to LOW")
+                    # sys.stdout.write("DEBUG: processPortData setting pin " + value + " to LOW")
+                    sys.stdout.write("DEBUG: processPortData setting pin {} to LOW".format(value))
 
     # TODO: maybe merge this method with process_port_data
     def process_analog_data(self, input_str):
         if self.__DEBUG:
-            sys.stdout.write("DEBUG: analog received message " + input_str)
+            # sys.stdout.write("DEBUG: analog received message " + input_str)
+            sys.stdout.write("DEBUG: analog received message {}".format(input_str))
 
         # This is a list of strings "pin1:value1","pin2:value2",...
         try:
@@ -131,10 +136,12 @@ class PortManager:
                 val = int(pin_val.split(":")[1])
                 self.__analog_input_pins[pin_id] = val
                 if self.__DEBUG:
-                    sys.stdout.write("DEBUG: setting analog pin " + str(pin_id) + " to " + str(val))
+                    # sys.stdout.write("DEBUG: setting analog pin " + str(pin_id) + " to " + str(val))
+                    sys.stdout.write("DEBUG: setting analog pin {} to {}".format(pin_id, val))
         except Exception as e:
             if self.__DEBUG:
-                sys.stdout.write("DEBUG: exception while parsing analog message")
-                sys.stdout.write(e)
+                #sys.stdout.write("DEBUG: exception while parsing analog message")
+                #sys.stdout.write(e)
+                sys.stdout.write("DEBUG: exception while parsing analog message {}".format(e))
                 #traceback.print_exc()
         pass
