@@ -30,6 +30,9 @@ class PortManager:
 
     # ************ BEGIN PUBLIC METHODS *************
 
+    def __init__(self):
+        pass
+
     def high_value(self):
         return self.__HIGH
 
@@ -57,7 +60,7 @@ class PortManager:
     # PIN 4 is mapped in position 4 (2^4=16=0x10) of port 4, i.e. 4:10;
     # PIN 9 is mapped in position 2 of port 2, i.e. 2:2, etc.
     # Old process_pin_mapping
-    def __init__(self, mapping):
+    def process_pin_mapping(self, mapping):
         # FIXME: add error checking: check that the length corresponds to the number of PINs, etc.
         # if mapping not correct raise exception
 

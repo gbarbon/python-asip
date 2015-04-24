@@ -3,7 +3,7 @@ __author__ = 'Gianluca Barbon'
 # import AsipWriter
 import sys
 # import traceback
-import port_manager
+from port_manager import PortManager
 
 
 class AsipClient:
@@ -68,7 +68,7 @@ class AsipClient:
         # Ports, pins, and services initialization
         # self.__pin_mode = [None]*(self.MAX_NUM_DIGITAL_PINS + self.MAX_NUM_ANALOG_PINS)
         self.__services = None
-        self.__port_map = None
+        self.__port_map = PortManager()
 
         if self.DEBUG:
             sys.stdout.write('End of constructor: arrays and maps created')
@@ -87,17 +87,17 @@ class AsipClient:
     # This method processes an input received on the serial port.
     # See protocol description for more detailed information.
     def process_input(self, input_str):
-        if input_str == self.EVENT_HANDLER:
+        if input_str[0] == self.EVENT_HANDLER:
             self.__handle_input_event(input_str)
-        elif input_str == self.ERROR_MESSAGE_HEADER:
+        elif input_str[0] == self.ERROR_MESSAGE_HEADER:
             self.__handle_input_error(input_str)
-        elif input_str == self.DEBUG_MESSAGE_HEADER:
+        elif input_str[0] == self.DEBUG_MESSAGE_HEADER:
             self.__handle_input_event(input_str)
         else:
             # FIXME: better error handling required!
             if self.DEBUG:
                 #sys.stdout.write('Strange character received at position 0: ' + input_str)
-                sys.stdout.write("Strange character received at position 0: {}".format(input_str))
+                sys.stdout.write("DEBUG: Strange character received at position 0: {}".format(input_str))
 
     # A method to request the mapping between ports and pins, see
     # process_port_data and process_pin_mapping for additional details
@@ -201,7 +201,7 @@ class AsipClient:
                 #bitmask = int(input_str[7:7], 16)  # convert to base 16
                 self.__port_map.process_port_data(input_str)
             elif input_str[3] == self.PORT_MAPPING:
-                self.__port_map = port_manager.PortManager(input_str)
+                self.__port_map.process_pin_mapping(input_str)
             elif input_str[3] == self.ANALOG_VALUE:
                 self.__port_map.process_analog_data(input_str)
 
