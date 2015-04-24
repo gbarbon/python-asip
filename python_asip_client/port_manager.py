@@ -6,7 +6,7 @@ import struct
 class PortManager:
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
-    __DEBUG = True # Do you want me to print verbose debug information?
+    __DEBUG = False # Do you want me to print verbose debug information?
 
     __MAX_NUM_DIGITAL_PINS = 72  # 9 ports of 8 pins at most?
     __MAX_NUM_ANALOG_PINS = 16  # Just a random number...
@@ -68,7 +68,7 @@ class PortManager:
         # Ports, pins, and services initialization
         self.__digital_input_pins = [None]*self.__MAX_NUM_DIGITAL_PINS
         self.__analog_input_pins = [None]*self.__MAX_NUM_ANALOG_PINS
-        self.__port_mapping = None
+        self.__port_mapping = {}
 
         # For the moment I take the substring comprised between "{" and "}"
         # and I create an array of strings for each element.
@@ -93,9 +93,7 @@ class PortManager:
             curr_pin += 1
 
         if self.__DEBUG:
-            #sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: ")
-            #sys.stdout.write("DEBUG: " + str(self.__port_mapping))
-            sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: {}".format(self.__port_mapping))
+            sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: {}\n".format(self.__port_mapping))
 
     # Method called every time a 'variation' in a pin is detected.
     # It process input messages for digital pins. We get a port and a sequence of bits.
@@ -110,8 +108,7 @@ class PortManager:
         bitmask = struct.unpack("h", input_str[7:7])[0] # convert to base 16
 
         if self.__DEBUG:
-            # sys.stdout.write("DEBUG: process_port_data for port " + str(port) + " and bitmask " + str(bitmask))
-            sys.stdout.write("DEBUG: process_port_data for port {} and bitmask {}".format(port,bitmask))
+            sys.stdout.write("DEBUG: process_port_data for port {} and bitmask {}\n".format(port,bitmask))
 
         single_port_map = self.__port_mapping[port] # map extraction for given port
 
@@ -119,34 +116,30 @@ class PortManager:
             if (key & bitmask) != 0x0:
                 self.__digital_input_pins[value] = self.__HIGH
                 if self.__DEBUG:
-                    # sys.stdout.write("DEBUG: processPortData setting pin " + value + " to HIGH")
-                    sys.stdout.write("DEBUG: processPortData setting pin {} to HIGH".format(value))
+                    sys.stdout.write("DEBUG: processPortData setting pin {} to HIGH\n".format(value))
             else:
                 self.__digital_input_pins[value] = self.__LOW
                 if self.__DEBUG:
-                    # sys.stdout.write("DEBUG: processPortData setting pin " + value + " to LOW")
-                    sys.stdout.write("DEBUG: processPortData setting pin {} to LOW".format(value))
+                    sys.stdout.write("DEBUG: processPortData setting pin {} to LOW\n".format(value))
 
     # TODO: maybe merge this method with process_port_data
     def process_analog_data(self, input_str):
+
         if self.__DEBUG:
-            # sys.stdout.write("DEBUG: analog received message " + input_str)
-            sys.stdout.write("DEBUG: analog received message {}".format(input_str))
+            sys.stdout.write("DEBUG: analog received message {}\n".format(input_str))
 
         # This is a list of strings "pin1:value1","pin2:value2",...
         try:
             pin_values = input_str[input_str.index("{")+1:input_str.index("}")].split(",")
+            if self.__DEBUG:
+                sys.stdout.write("DEBUG: printing pin values: {}\n".format(pin_values))
             for pin_val in pin_values:
                 pin_id = int(pin_val.split(":")[0])
                 val = int(pin_val.split(":")[1])
                 self.__analog_input_pins[pin_id] = val
                 if self.__DEBUG:
-                    # sys.stdout.write("DEBUG: setting analog pin " + str(pin_id) + " to " + str(val))
-                    sys.stdout.write("DEBUG: setting analog pin {} to {}".format(pin_id, val))
+                    sys.stdout.write("DEBUG: setting analog pin {} to {}\n".format(pin_id, val))
         except Exception as e:
             if self.__DEBUG:
-                #sys.stdout.write("DEBUG: exception while parsing analog message")
-                #sys.stdout.write(e)
-                sys.stdout.write("DEBUG: exception while parsing analog message {}".format(e))
+                sys.stdout.write("DEBUG: exception while parsing analog message: '{}'\n".format(e))
                 #traceback.print_exc()
-        pass

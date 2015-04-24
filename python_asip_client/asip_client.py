@@ -70,13 +70,14 @@ class AsipClient:
         self.__services = {}
         self.__port_map = PortManager()
 
-        if self.DEBUG:
-            sys.stdout.write('End of constructor: arrays and maps created')
-            pass
-
         # constructor also work without writer parameter
         if w is not None:
             self.__out = w
+            if self.DEBUG:
+                sys.stdout.write('DEBUG: Constructor, writer supplied\n')
+
+        if self.DEBUG:
+            sys.stdout.write('DEBUG: End of constructor: arrays and maps created\n')
 
     # ************ BEGIN PUBLIC METHODS *************
 
@@ -96,17 +97,13 @@ class AsipClient:
         else:
             # FIXME: better error handling required!
             if self.DEBUG:
-                #sys.stdout.write('Strange character received at position 0: ' + input_str)
                 sys.stdout.write("DEBUG: Strange character received at position 0: {}".format(input_str))
 
-    # A method to request the mapping between ports and pins, see
-    # process_port_data and process_pin_mapping for additional details
-    # on the actual mapping.
+    # A method to request the mapping between ports and pins.
+    # See process_port_data and process_pin_mapping for additional details on the actual mapping.
     def request_port_mapping(self):
-        #self.__out.write(self.IO_SERVICE+','+self.PORT_MAPPING+'\n')
         self.__out.write("{},{}\n".format(self.IO_SERVICE,self.PORT_MAPPING))
         if self.DEBUG:
-            # sys.stdout.write('DEBUG: Requesting port mapping with ' + self.IO_SERVICE + ',' + self.PORT_MAPPING + '\n')
             sys.stdout.write("DEBUG: Requesting port mapping with {},{}\n".format(self.IO_SERVICE,self.PORT_MAPPING))
 
     def digital_read(self, pin):
@@ -120,35 +117,29 @@ class AsipClient:
     def set_pin_mode(self, pin, mode):
         self.__out.write("{},{},{},{}\n".format(self.IO_SERVICE, self.PIN_MODE, pin, mode))
         if self.DEBUG:
-            sys.stdout.write("DEBUG: Setting pin mode with {},{},{},{}".format(self.IO_SERVICE,self.PIN_MODE,pin, mode))
+            sys.stdout.write(
+                "DEBUG: Setting pin mode with {},{},{},{}\n".format(self.IO_SERVICE,self.PIN_MODE,pin, mode))
 
     # A method to write to a digital pin
     def digital_write(self, pin, value):
         self.__out.write("{},{},{},{}\n".format(self.IO_SERVICE, self.DIGITAL_WRITE,pin,value))
         if self.DEBUG:
-            #sys.stdout.write(
-            #    "DEBUG: Setting digital pin with " + self.IO_SERVICE + "," + self.DIGITAL_WRITE + "," + pin + "," + value)
             sys.stdout.write(
-                "DEBUG: Setting digital pin with {},{},{},{}".format(self.IO_SERVICE,self.DIGITAL_WRITE,pin,value))
+                "DEBUG: Setting digital pin with {},{},{},{}\n".format(self.IO_SERVICE,self.DIGITAL_WRITE,pin,value))
 
     # A method to write to an analog pin
     def analog_write(self, pin, value):
-        #self.__out.write(self.IO_SERVICE + "," + self.ANALOG_WRITE + "," + pin + "," + value + "\n")
         self.__out.write("{},{},{},{}\n".format(self.IO_SERVICE,self.ANALOG_WRITE,pin,value))
         if self.DEBUG:
-            # sys.stdout.write(
-            #    "DEBUG: Setting analog pin with " + self.IO_SERVICE + "," + self.DIGITAL_WRITE + "," + pin + "," + value)
             sys.stdout.write(
-                "DEBUG: Setting analog pin with {},{},{},{}".format(self.IO_SERVICE,self.DIGITAL_WRITE,pin,value))
+                "DEBUG: Setting analog pin with {},{},{},{}\n".format(self.IO_SERVICE,self.DIGITAL_WRITE,pin,value))
 
     # A method to set the autoreport interval (in ms)
     def set_auto_report_interval(self, interval):
-        #self.__out.write(self.IO_SERVICE + "," + self.ANALOG_DATA_REQUEST + "," + interval + "\n")
         self.__out.write("{},{},{}\n".format(self.IO_SERVICE,self.ANALOG_DATA_REQUEST,interval))
         if self.DEBUG:
-            # sys.stdout.write(
-            #    "DEBUG: Setting autoreport interval " + self.IO_SERVICE + "," + self.ANALOG_DATA_REQUEST + "," + interval)
-            sys.stdout.write("DEBUG: Setting autoreport interval {},{},{}".format(self.IO_SERVICE,self.ANALOG_DATA_REQUEST,interval))
+            sys.stdout.write(
+                "DEBUG: Setting autoreport interval {},{},{}\n".format(self.IO_SERVICE,self.ANALOG_DATA_REQUEST,interval))
 
     # It is possible to add services at run-time:
     def add_service(self, service_id, asip_service):
@@ -188,7 +179,7 @@ class AsipClient:
     def __handle_input_event(self, input_str):
         if self.DEBUG:
             # sys.stdout.write("DEBUG: received message "+input_str)
-            sys.stdout.write("DEBUG: received message {}".format(input_str))
+            sys.stdout.write("DEBUG: received message {}\n".format(input_str))
 
         if input_str[1] == self.IO_SERVICE:
             # Digital pins (in port)
@@ -208,8 +199,7 @@ class AsipClient:
             # TODO: implement missing messages!
             else:
                 if self.DEBUG:
-                    # sys.stdout.write("Service not recognised in position 3 for I/O service: " + input_str)
-                    sys.stdout.write("Service not recognised in position 3 for I/O service: {}".format(input_str))
+                    sys.stdout.write("DEBUG: Service not recognised in position 3 for I/O service: {}\n".format(input_str))
         # end of IO_SERVICE
 
         elif input_str[1] in self.__services.keys():
@@ -221,30 +211,35 @@ class AsipClient:
         else:
             # We don't know what to do with it.
             if self.DEBUG:
-                # sys.stdout.write("Event not recognised at position 1: " + input_str)
-                sys.stdout.write("Event not recognised at position 1: {}".format(input_str))
+                sys.stdout.write("DEBUG: Event not recognised at position 1: {}\n".format(input_str))
 
     # To handle a message starting with an error header (this is a form of error reporting from Arduino)
     def __handle_input_error(self, input_str):
         # FIXME: improve error handling
         if self.DEBUG:
-            # sys.stdout.write("Error message received: "+input_str)
-            sys.stdout.write("Error message received: {}".format(input_str))
+            sys.stdout.write("DEBUG: Error message received: {}\n".format(input_str))
 
     # For the moment we just report board's debug messages on screen
     # FIXME: do something smarter?
     def __handle_debug_event(self, input_str):
         if self.DEBUG:
-            # sys.stdout.write("DEBUG: " + input_str)
-            sys.stdout.write("DEBUG: {}".format(input_str))
+            sys.stdout.write("DEBUG: {}\n".format(input_str))
 
     # ************ END PRIVATE METHODS *************/
 
-    # ************ TESTING *************
-    # A simple main method to test off-line
-    def main(args):
-        test_client = AsipClient()
-        test_client.process_input("@I,M,20{4:1,4:2,4:4,4:8,4:10,4:20,4:40,4:80,2:1,2:2,2:4,2:8,2:10,2:20,3:1,3:2,3:4,3:8,3:10,3:20}")
-        test_client.process_input("@I,p,4,F")
-        test_client.process_input("@I,p,4,10")
-        test_client.process_input("@I,p,4,FF")
+
+# ************ TESTING *************
+# A simple main method to test off-line
+
+
+def main():
+    test_client = AsipClient()
+    test_client.process_input("@I,M,20{4:1,4:2,4:4,4:8,4:10,4:20,4:40,4:80,2:1,2:2,2:4,2:8,2:10,2:20,3:1,3:2,3:4,3:8,3:10,3:20}")
+    test_client.process_input("@I,p,4,F")
+    test_client.process_input("@I,p,4,10")
+    test_client.process_input("@I,p,4,FF")
+
+# De-comment to test this class
+#main()
+
+
