@@ -42,15 +42,24 @@ class PortManager:
 
     # I'm not sure we want this public... FIXME?
     def get_digital_pins(self):
-        return self.__digital_input_pins
+        try:
+            return self.__digital_input_pins
+        except:
+            pass
 
     def digital_read(self, pin):
-        # FIXME: should add error checking here
-        return self.__digital_input_pins[pin]
+        # FIXME: fix try check (use raise instead?)
+        try:
+            return self.__digital_input_pins[pin]
+        except TypeError as e:
+            sys.stdout.write("Exception: {}. Parameter 'pin' has invalid type".format(e))
 
     def analog_read(self, pin):
-        # FIXME: should add error checking here
-        return self.__analog_input_pins[pin]
+        # FIXME: fix try check (use raise instead?)
+        try:
+            return self.__analog_input_pins[pin]
+        except TypeError as e:
+            sys.stdout.write("Exception: {}. Parameter 'pin' has invalid type".format(e))
 
     # Method called only during the setup. At the beginning we receive a mapping of the form:
     # @I,M,20{4:1,4:2,4:4,4:8,4:10,4:20,4:40,4:80,2:1,2:2,2:4,2:8,2:10,2:20,3:1,3:2,3:4,3:8,3:10,3:20}
@@ -125,6 +134,11 @@ class PortManager:
     # TODO: maybe merge this method with process_port_data
     def process_analog_data(self, input_str):
 
+        #TODO: add error checking on parameter type
+
+        if input_str == None:
+            raise ValueError
+
         if self.__DEBUG:
             sys.stdout.write("DEBUG: analog received message {}\n".format(input_str))
 
@@ -140,6 +154,5 @@ class PortManager:
                 if self.__DEBUG:
                     sys.stdout.write("DEBUG: setting analog pin {} to {}\n".format(pin_id, val))
         except Exception as e:
-            if self.__DEBUG:
-                sys.stdout.write("DEBUG: exception while parsing analog message: '{}'\n".format(e))
+            sys.stdout.write("Exception: {} while parsing analog message\n".format(e))
                 #traceback.print_exc()

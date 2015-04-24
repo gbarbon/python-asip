@@ -22,65 +22,43 @@ class SimpleSerialBoard:
 
     # ************   BEGIN PRIVATE FIELDS DEFINITION ****************
 
-    # self board uses serial communication
-    ser_conn = None
-
-    # The client for the aisp protocol
-    asip = None
-
-    # Buffer
-    queue = Queue(10) # TODO: use pipe instead of queue for better performances
-    # FIXME: fix Queue dimension?
+    ser_conn = None  # self board uses serial communication
+    asip = None  # The client for the aisp protocol
+    queue = Queue(10)  # Buffer # TODO: use pipe instead of queue for better performances
+    #  FIXME: fix Queue dimension?
 
     # ************   END PRIVATE FIELDS DEFINITION ****************
 
-    # self constructor takes the name of the serial port and it
-    # creates the serialPort object.
-    # We attach a listener to the serial port with SerialPortReader  self
-    # listener calls the aisp method to process input.
+    # self constructor takes the name of the serial port and it creates a Serial object
+    # TODO: port parameter is not used yet
+    # Here the serial listener and the queue reader are started
     def __init__(self, port):
-
-        # FIXME: very simple implementation!
-        # self.serial_port = SerialPort(port) # class serial port does not exist
-        self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
-        self.asip = AsipClient(self.SimpleWriter(self))
-
-        # try:
-        #     serialPort.openPort() # Open port
-        #     serialPort.setParams(57600, 8, 1, 0)
-        #     serialPort.setDTR(false)
-        #     Thread.sleep(250)
-        #     serialPort.setDTR(true)
-        #     # Set params
-        #     int mask = SerialPort.MASK_RXCHAR   #+ SerialPort.MASK_CTS
-        #             # + SerialPort.MASK_DSR # Prepare mask
-        #     serialPort.setEventsMask(mask) # Set mask
-        #  catch (Exception ex):
-        #     System.out.println(ex)
+        # TODO: very simple implementation, need to improve
 
         try:
-            # Thread.sleep(1500)
-            # requestPortMapping()
-            # Thread.sleep(500)
-            # requestPortMapping()
-            # Thread.sleep(500)
-            # requestPortMapping()
-            # Thread.sleep(500)
-            self.request_port_mapping()
-            time.sleep(0.5)
-            self.request_port_mapping()
-            time.sleep(0.5)
-            self.request_port_mapping()
-            time.sleep(0.5)
-            self.ListenerThread(self.queue, self.ser_conn, self.DEBUG).start()
-            self.ConsumerThread(self.queue, self.asip, self.DEBUG).start()
+            self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
+            self.asip = AsipClient(self.SimpleWriter(self))
         except Exception as e:
-            print(e) #TODO: improve exception handling
+            sys.stdout.write("Exception: caught {} while init serial and asip protocols\n".format(e))
+
+        try:
+            self.request_port_mapping()
+            time.sleep(0.5)
+            self.request_port_mapping()
+            time.sleep(0.5)
+            self.request_port_mapping()
+            time.sleep(0.5)
+            self.ListenerThread(self.queue, self.ser_conn, True, self.DEBUG).start()
+            self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
+        except Exception as e:
+            #TODO: improve exception handling
+            sys.stdout.write("Exception: caught {} while launching threads\n".format(e))
 
 
     # ************ BEGIN PUBLIC METHODS *************
 
     # The following methods are just a replica from the asip class.
+    # TODO: add parameter checikng in each function (raise exception?)
     def digital_read(self, pin):
         return self.asip.digital_read(pin)
 
@@ -128,32 +106,41 @@ class SimpleSerialBoard:
 
         # val is a string
         def write(self, val):
-            # global ser_conn
             self.parent.ser_conn.write(val.encode())
             # TODO: implement try catch
 
-    # A class for a listener that calls the processInput method of the AispClient.
-    # class SerialPortReader implements SerialPortEventListener:
-
+    # ListenerThread and ConsumerThread are implemented following the Producer/Consumer pattern
+    # A class for a listener that rad the serial stream and put incoming messages on a queue
     class ListenerThread(Thread):
 
         queue = None
         ser_conn = None
-        DEBUG = None
+        running = False
+        DEBUG = False
 
-        def __init__(self, queue, ser_conn, DEBUG):
+        # overriding constructor
+        def __init__(self, queue, ser_conn, running, debug):
             Thread.__init__(self)
             self.queue = queue
             self.ser_conn = ser_conn
-            self.DEBUG = DEBUG
+            self.running = running
+            self.DEBUG = debug
 
+        # if needed, kill will stops the loop inside run method
+        def kill(self):
+            self.running = False
+
+        # overriding run method, thread activity
         def run(self):
             temp_buff = ""
             # global serial
             time.sleep(2)
             nums = range(5)
             # global _queue
-            while True:
+
+            # TODO: implement ser.inWaiting() >= minMsgLen to check number of char in the receive buffer?
+
+            while self.running:
                 # num = random.choice(nums)
                 if self.DEBUG:
                     sys.stdout.write("DEBUG: Temp buff is now {}\n".format(temp_buff))
@@ -179,7 +166,6 @@ class SimpleSerialBoard:
                             val = val[val.index("\n")+1:]
                             if self.DEBUG:
                                 sys.stdout.write("DEBUG: Now val is {}\n".format(val))
-                            # self.asip.process_input()
                         if len(val)>0:
                             temp_buff = val
                         if self.DEBUG:
@@ -188,30 +174,37 @@ class SimpleSerialBoard:
                         temp_buff += val
                         if self.DEBUG:
                             sys.stdout.write("DEBUG: else case, buff is equal to val, so they are {}\n".format(temp_buff))
-                #time.sleep(random.random())
 
-
+    # A class that reads the queue and launch the processInput method of the AispClient.
     class ConsumerThread(Thread):
 
         queue = None
-        DEBUG = None
         asip = None
+        running = False
+        DEBUG = False
 
-        def __init__(self, queue, asip, DEBUG):
+        # overriding constructor
+        def __init__(self, queue, asip, running, debug):
             Thread.__init__(self)
             self.queue = queue
-            self.DEBUG = DEBUG
             self.asip = asip
+            self.running = running
+            self.DEBUG = debug
 
+        # if needed, kill will stops the loop inside run method
+        def kill(self):
+            self.running = False
+
+        # overriding run method, thread activity
         def run(self):
             # global _queue
             # global asip
-            while True:
+            while self.running:
                 temp = self.queue.get()
                 self.asip.process_input(temp)
                 self.queue.task_done()
                 # if temp == "\n":
                     # print("WARNING")
                 # print ("Consumed", temp)
-                # time.sleep(random.random())
+
     # ************ END PRIVATE CLASSES *************

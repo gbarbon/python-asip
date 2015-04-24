@@ -97,7 +97,7 @@ class AsipClient:
         else:
             # FIXME: better error handling required!
             if self.DEBUG:
-                sys.stdout.write("DEBUG: Strange character received at position 0: {}".format(input_str))
+                sys.stdout.write("DEBUG: Strange character received at position 0: {}\n".format(input_str))
 
     # A method to request the mapping between ports and pins.
     # See process_port_data and process_pin_mapping for additional details on the actual mapping.
