@@ -1,6 +1,7 @@
 __author__ = 'Gianluca Barbon'
 
 import sys
+import struct
 
 class PortManager:
 
@@ -105,7 +106,8 @@ class PortManager:
     def process_port_data(self, input_str):
 
         port = int(input_str[5:6])
-        bitmask = int(input_str[7:7], 16)  # convert to base 16
+        #bitmask = int(input_str[7:7], 16)  # convert to base 16 returns problem with int() function
+        bitmask = struct.unpack("h", input_str[7:7])[0] # convert to base 16
 
         if self.__DEBUG:
             # sys.stdout.write("DEBUG: process_port_data for port " + str(port) + " and bitmask " + str(bitmask))

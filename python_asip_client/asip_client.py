@@ -54,7 +54,7 @@ class AsipClient:
     # FIXME: there could be more than one service with the same ID!
     # (two servos, two distance sensors, etc).
     # use of the dict for python for hashmap
-    __services = {}
+    __services = None
 
     # The output channel (where we write messages). This should typically be a serial port, but could be anything else.
     # out = AsipWriter()
@@ -67,7 +67,7 @@ class AsipClient:
 
         # Ports, pins, and services initialization
         # self.__pin_mode = [None]*(self.MAX_NUM_DIGITAL_PINS + self.MAX_NUM_ANALOG_PINS)
-        self.__services = None
+        self.__services = {}
         self.__port_map = PortManager()
 
         if self.DEBUG:
