@@ -12,7 +12,7 @@ class AsipClient:
     # TODO: implement emulation of constant through dedicated file / function
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
-    DEBUG = False  # Do you want me to print verbose debug information?
+    DEBUG = True  # Do you want me to print verbose debug information?
 
     # Low-level tags for I/O service:
     IO_SERVICE = 'I'  # tag indicating message is for I/O service

@@ -7,7 +7,7 @@ import binascii
 class PortManager:
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
-    __DEBUG = False # Do you want me to print verbose debug information?
+    __DEBUG = True # Do you want me to print verbose debug information?
 
     __MAX_NUM_DIGITAL_PINS = 72  # 9 ports of 8 pins at most?
     __MAX_NUM_ANALOG_PINS = 16  # Just a random number...
@@ -33,7 +33,10 @@ class PortManager:
     # ************ BEGIN PUBLIC METHODS *************
 
     def __init__(self):
-        pass
+        # Ports, pins, and services initialization
+        self.__digital_input_pins = [None]*self.__MAX_NUM_DIGITAL_PINS
+        self.__analog_input_pins = [None]*self.__MAX_NUM_ANALOG_PINS
+        self.__port_mapping = {}
 
     def high_value(self):
         return self.__HIGH
@@ -74,11 +77,6 @@ class PortManager:
     def process_pin_mapping(self, mapping):
         # FIXME: add error checking: check that the length corresponds to the number of PINs, etc.
         # if mapping not correct raise exception
-
-        # Ports, pins, and services initialization
-        self.__digital_input_pins = [None]*self.__MAX_NUM_DIGITAL_PINS
-        self.__analog_input_pins = [None]*self.__MAX_NUM_ANALOG_PINS
-        self.__port_mapping = {}
 
         # For the moment I take the substring comprised between "{" and "}"
         # and I create an array of strings for each element.
