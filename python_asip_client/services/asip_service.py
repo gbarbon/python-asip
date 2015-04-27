@@ -14,11 +14,11 @@ class AsipService:
 
     # A service must have an ID.
 	# A service should implement setter and getter for ID.
-    def getServiceID(self):
+    def get_service_id(self):
         pass
 
     # id is a char
-    def setServiceID(self, id):
+    def set_service_id(self, id):
         pass
 
     # A service must specify how to process responses

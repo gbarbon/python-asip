@@ -12,7 +12,7 @@ class AsipClient:
     # TODO: implement emulation of constant through dedicated file / function
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
-    DEBUG = True  # Do you want me to print verbose debug information?
+    DEBUG = False  # Do you want me to print verbose debug information?
 
     # Low-level tags for I/O service:
     IO_SERVICE = 'I'  # tag indicating message is for I/O service
@@ -202,8 +202,9 @@ class AsipClient:
         elif input_str[1] in self.__services.keys():
             # Is this one of the services we know? If this is the case, we call it and we process the input
             # I want a map function here!! For the moment we use a for loop...
-            for s in self.__services[input_str[1]]:
-                s.processResponse(input_str)
+            self.__services[input_str[1]].process_response(input_str)
+            #for s in self.__services[input_str[1]]:
+            #    s.process_response(input_str)
 
         else:
             # We don't know what to do with it.

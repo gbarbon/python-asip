@@ -10,7 +10,7 @@ import time
 # The main method does a standard blink test.
 class SimpleBlink(SimpleSerialBoard):
 
-    __DEBUG = True
+    __DEBUG = False
 
     def main(self):
         try:
