@@ -14,8 +14,8 @@ class SimpleBlink(SimpleSerialBoard):
 
     def main(self):
         try:
-            time.sleep(1)
-            self.request_port_mapping()
+            #time.sleep(1)
+            #self.request_port_mapping()
             time.sleep(0.5)
             self.set_pin_mode(13, AsipClient.OUTPUT)
             time.sleep(0.5)

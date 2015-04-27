@@ -7,7 +7,7 @@ import binascii
 class PortManager:
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
-    __DEBUG = True # Do you want me to print verbose debug information?
+    __DEBUG = False # Do you want me to print verbose debug information?
 
     __MAX_NUM_DIGITAL_PINS = 72  # 9 ports of 8 pins at most?
     __MAX_NUM_ANALOG_PINS = 16  # Just a random number...
@@ -101,8 +101,7 @@ class PortManager:
             curr_pin += 1
 
         if self.__DEBUG:
-            sys.stdout.write("DEBUG: {}.{}: Port bits to PIN numbers mapping: {}\n".format(
-                PortManager.__name__,self.process_pin_mapping.__name__ , self.__port_mapping))
+            sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: {}\n".format(self.__port_mapping))
 
     # Method called every time a 'variation' in a pin is detected.
     # It process input messages for digital pins. We get a port and a sequence of bits.
@@ -124,7 +123,10 @@ class PortManager:
         if self.__DEBUG:
             sys.stdout.write("DEBUG: port {} and bitmask {}\n".format(port,bitmask))
 
-        single_port_map = self.__port_mapping[port] # map extraction for given port
+        if port not in self.__port_mapping:
+            # this happens when the process_pin_mapping method has not been called yet
+            raise KeyError
+        single_port_map = self.__port_mapping[port]
 
         for (key, value) in single_port_map.items():
             if (key & bitmask) != 0x0:

@@ -47,12 +47,13 @@ class SimpleSerialBoard:
             sys.stdout.write("Exception: caught {} while init serial and asip protocols\n".format(e))
 
         try:
-            self.request_port_mapping()
+            # NOTICE: two request_port_mapping() are required. If this method is not called two times,
+            # the client won't be able to set the pin mapping
             time.sleep(0.5)
             self.request_port_mapping()
-            time.sleep(0.5)
+            time.sleep(1)
             self.request_port_mapping()
-            time.sleep(0.5)
+            time.sleep(1)
             self.ListenerThread(self.queue, self.ser_conn, True, self.DEBUG).start()
             self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
         except Exception as e:
