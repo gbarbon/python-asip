@@ -12,7 +12,7 @@ class AsipClient:
     # TODO: implement emulation of constant through dedicated file / function
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
-    DEBUG = True  # Do you want me to print verbose debug information?
+    DEBUG = False  # Do you want me to print verbose debug information?
 
     # Low-level tags for I/O service:
     IO_SERVICE = 'I'  # tag indicating message is for I/O service
@@ -95,7 +95,7 @@ class AsipClient:
         elif input_str[0] == self.DEBUG_MESSAGE_HEADER:
             self.__handle_input_event(input_str)
         else:
-            # FIXME: better error handling required!
+            # FIXME: better error handling required! (raise exception) ?
             if self.DEBUG:
                 sys.stdout.write("DEBUG: Strange character received at position 0: {}\n".format(input_str))
 
@@ -150,11 +150,9 @@ class AsipClient:
         else:
             self.__services.update({service_id: asip_service})
 
-    # FIXME: fix code below, add a list of services instead of a single one
+    # FIXME: fix code below, add a list of services instead of a single one. Maybe the previous one work instead?
     # It is possible to add services at run-time (this one takes a list):
-    # def addService(self, serviceID, LinkedList<AsipService> s) :
-    #services.put(serviceID,s)
-    # pass
+    # Notice: in python we cannot have method with same name!!
 
     # Just return the list of services
     def get_services(self):
@@ -178,7 +176,6 @@ class AsipClient:
     # A method to do what is says on the tin...
     def __handle_input_event(self, input_str):
         if self.DEBUG:
-            # sys.stdout.write("DEBUG: received message "+input_str)
             sys.stdout.write("DEBUG: received message {}\n".format(input_str))
 
         if input_str[1] == self.IO_SERVICE:

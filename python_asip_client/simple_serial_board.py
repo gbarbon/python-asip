@@ -3,6 +3,8 @@ __author__ = 'Gianluca Barbon'
 import asip_writer
 import time
 import sys
+import platform
+import os
 import random
 from asip_client import AsipClient
 from threading import Thread
@@ -26,17 +28,20 @@ class SimpleSerialBoard:
     asip = None  # The client for the aisp protocol
     queue = Queue(10)  # Buffer # TODO: use pipe instead of queue for better performances
     #  FIXME: fix Queue dimension?
+    _port = "" #serial port
 
     # ************   END PRIVATE FIELDS DEFINITION ****************
 
     # self constructor takes the name of the serial port and it creates a Serial object
-    # TODO: port parameter is not used yet
     # Here the serial listener and the queue reader are started
-    def __init__(self, port):
+    def __init__(self):
         # TODO: very simple implementation, need to improve
 
         try:
-            self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
+            # old implementation was:
+            #self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
+            self.serial_port_finder()
+            self.ser_conn = Serial(port=self._port, baudrate=57600)
             self.asip = AsipClient(self.SimpleWriter(self))
         except Exception as e:
             sys.stdout.write("Exception: caught {} while init serial and asip protocols\n".format(e))
@@ -91,6 +96,28 @@ class SimpleSerialBoard:
 
     # ************ BEGIN PRIVATE METHODS *************
 
+    # This methods retrieves the operating system and set the Arduino serial port
+    # TODO: missing linux and windows implementation
+    def serial_port_finder(self):
+        system = platform.system()
+        if self.DEBUG:
+            sys.stdout.write("DEBUG: detected os is {}\n".format(system))
+        if 'linux' in system:
+            pass
+        elif 'Darwin' == system: # also 'mac' or 'darwin' may work?
+            for file in os.listdir("/dev"):
+                if file.startswith("tty.usbmodem"):
+                    self._port = "/dev/" + file
+                    if self.DEBUG:
+                        sys.stdout.write("DEBUG: serial file is {}\n".format(file))
+                    break
+        elif ('win' in system) or ('Win' in system) or ('cygwin' in system) or ('nt' in system):
+            pass
+        else:
+            raise Exception
+        if self.DEBUG:
+            sys.stdout.write("DEBUG: port is {}\n".format(self._port))
+
     # ************ END PRIVATE METHODS *************
 
 
@@ -125,6 +152,8 @@ class SimpleSerialBoard:
             self.ser_conn = ser_conn
             self.running = running
             self.DEBUG = debug
+            if self.DEBUG:
+                sys.stdout.write("DEBUG: serial thread process created \n")
 
         # if needed, kill will stops the loop inside run method
         def kill(self):
@@ -190,6 +219,8 @@ class SimpleSerialBoard:
             self.asip = asip
             self.running = running
             self.DEBUG = debug
+            if self.DEBUG:
+                sys.stdout.write("DEBUG: consumer thread created \n")
 
         # if needed, kill will stops the loop inside run method
         def kill(self):

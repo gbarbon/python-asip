@@ -2,6 +2,7 @@ __author__ = 'Gianluca Barbon'
 
 import sys
 import struct
+import binascii
 
 class PortManager:
 
@@ -102,7 +103,8 @@ class PortManager:
             curr_pin += 1
 
         if self.__DEBUG:
-            sys.stdout.write("DEBUG: Port bits to PIN numbers mapping: {}\n".format(self.__port_mapping))
+            sys.stdout.write("DEBUG: {}.{}: Port bits to PIN numbers mapping: {}\n".format(
+                PortManager.__name__,self.process_pin_mapping.__name__ , self.__port_mapping))
 
     # Method called every time a 'variation' in a pin is detected.
     # It process input messages for digital pins. We get a port and a sequence of bits.
@@ -112,12 +114,17 @@ class PortManager:
     # FIXME: check that no data arrives before __port_mapping has been created initialized!
     def process_port_data(self, input_str):
 
+        if self.__DEBUG:
+            sys.stdout.write("DEBUG: received input string is {}\n".format(input_str))
+
         port = int(input_str[5:6])
-        #bitmask = int(input_str[7:7], 16)  # convert to base 16 returns problem with int() function
-        bitmask = struct.unpack("h", input_str[7:7])[0] # convert to base 16
+        # bitmask = struct.unpack("h", input_str[7])[0] # convert to base 16
+        #bitmask = binascii.b2a_hex(input_str[7])
+        # bitmask = binascii.hexlify(input_str[7].encode('ascii'))
+        bitmask = int(input_str[7], 16)
 
         if self.__DEBUG:
-            sys.stdout.write("DEBUG: process_port_data for port {} and bitmask {}\n".format(port,bitmask))
+            sys.stdout.write("DEBUG: port {} and bitmask {}\n".format(port,bitmask))
 
         single_port_map = self.__port_mapping[port] # map extraction for given port
 
