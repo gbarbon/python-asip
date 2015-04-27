@@ -6,12 +6,14 @@ import sys
 import platform
 import os
 import random
+import glob
 from asip_client import AsipClient
 from threading import Thread
 from queue import Queue
 from asip_writer import AsipWriter
 # import services.AsipService
 from serial import Serial
+import serial
 
 
 class SimpleSerialBoard:
@@ -29,6 +31,7 @@ class SimpleSerialBoard:
     queue = Queue(10)  # Buffer # TODO: use pipe instead of queue for better performances
     #  FIXME: fix Queue dimension?
     _port = "" #serial port
+    _ports = [] #serial ports array
 
     # ************   END PRIVATE FIELDS DEFINITION ****************
 
@@ -36,12 +39,16 @@ class SimpleSerialBoard:
     # Here the serial listener and the queue reader are started
     def __init__(self):
         # TODO: very simple implementation, need to improve
+        #self.ser_conn = Serial()
+        #self.serial_port_finder()
 
         try:
             # old implementation was:
             #self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
+            # self.ser_conn = Serial(port=self._port, baudrate=57600)
+            self.ser_conn = Serial()
             self.serial_port_finder()
-            self.ser_conn = Serial(port=self._port, baudrate=57600)
+            self.open_serial(self._ports[0], 57600)
             self.asip = AsipClient(self.SimpleWriter(self))
         except Exception as e:
             sys.stdout.write("Exception: caught {} while init serial and asip protocols\n".format(e))
@@ -97,27 +104,72 @@ class SimpleSerialBoard:
 
     # ************ BEGIN PRIVATE METHODS *************
 
-    # This methods retrieves the operating system and set the Arduino serial port
-    # TODO: missing linux and windows implementation
+    def open_serial(self, port, baudrate):
+        if self.ser_conn.isOpen():
+            self.ser_conn.close()
+        self.ser_conn.port = port
+        self.ser_conn.baudrate = baudrate
+        self.ser_conn.open()
+        # Toggle DTR to reset Arduino
+        self.ser_conn.setDTR(False)
+        time.sleep(1)
+        # toss any data already received, see
+        self.ser_conn.flushInput()
+        self.ser_conn.setDTR(True)
+
+    def close_serial(self):
+        self.ser_conn.close()
+
+    # This methods retrieves the operating system and set the Arduino serial portù
+    """Lists serial ports
+
+    :raises EnvironmentError:
+        On unsupported or unknown platforms
+    :returns:
+        A list of available serial ports
+    """
+    # TODO: test needed for linux and windows implementation
     def serial_port_finder(self):
-        system = platform.system()
-        if self.DEBUG:
-            sys.stdout.write("DEBUG: detected os is {}\n".format(system))
-        if 'linux' in system:
-            pass
-        elif 'Darwin' == system: # also 'mac' or 'darwin' may work?
-            for file in os.listdir("/dev"):
-                if file.startswith("tty.usbmodem"):
-                    self._port = "/dev/" + file
-                    if self.DEBUG:
-                        sys.stdout.write("DEBUG: serial file is {}\n".format(file))
-                    break
-        elif ('win' in system) or ('Win' in system) or ('cygwin' in system) or ('nt' in system):
-            pass
+        #system = platform.system()
+        # if self.DEBUG:
+        #     sys.stdout.write("DEBUG: detected os is {}\n".format(system))
+        # if 'linux' in system:
+        #     pass
+        # elif 'Darwin' == system: # also 'mac' or 'darwin' may work?
+        #     for file in os.listdir("/dev"):
+        #         if file.startswith("tty.usbmodem"):
+        #             self._port = "/dev/" + file
+        #             if self.DEBUG:
+        #                 sys.stdout.write("DEBUG: serial file is {}\n".format(file))
+        #             break
+        # elif ('win' in system) or ('Win' in system) or ('cygwin' in system) or ('nt' in system):
+        #     pass
+        # else:
+        #     raise EnvironmentError('Unsupported platform')
+        # if self.DEBUG:
+        #     sys.stdout.write("DEBUG: port is {}\n".format(self._port))
+
+        system = sys.platform
+        if system.startswith('win'):
+            temp_ports = ['COM' + str(i + 1) for i in range(256)]
+        elif system.startswith('linux'):
+            # this is to exclude your current terminal "/dev/tty"
+            temp_ports = glob.glob('/dev/tty[A-Za-z]*')
+        elif system.startswith('darwin'):
+            temp_ports = glob.glob('/dev/tty.usbmodem*')
         else:
-            raise Exception
+            raise EnvironmentError('Unsupported platform')
+
+        for port in temp_ports:
+            try:
+                self.ser_conn.port = port
+                s = self.ser_conn.open()
+                self.ser_conn.close()
+                self._ports.append(port)
+            except serial.SerialException:
+                pass
         if self.DEBUG:
-            sys.stdout.write("DEBUG: port is {}\n".format(self._port))
+             sys.stdout.write("DEBUG: available ports are {}\n".format(self._ports))
 
     # ************ END PRIVATE METHODS *************
 
@@ -133,12 +185,19 @@ class SimpleSerialBoard:
             self.parent = parent
 
         # val is a string
+        # TODO: improve try catch
         def write(self, val):
-            self.parent.ser_conn.write(val.encode())
-            # TODO: implement try catch
+            if self.parent.ser_conn.isOpen():
+                try:
+                    self.parent.ser_conn.write(val.encode())
+                except (OSError, serial.SerialException):
+                    pass
+            else:
+                raise serial.SerialException
 
     # ListenerThread and ConsumerThread are implemented following the Producer/Consumer pattern
     # A class for a listener that rad the serial stream and put incoming messages on a queue
+    # TODO: implement try catch
     class ListenerThread(Thread):
 
         queue = None
