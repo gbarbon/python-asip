@@ -88,6 +88,8 @@ class AsipClient:
     # This method processes an input received on the serial port.
     # See protocol description for more detailed information.
     def process_input(self, input_str):
+        if self.DEBUG:
+            sys.stdout.write("DEBUG: received input in process_input is {}\n".format(input_str))
         if input_str[0] == self.EVENT_HANDLER:
             self.__handle_input_event(input_str)
         elif input_str[0] == self.ERROR_MESSAGE_HEADER:
@@ -141,18 +143,22 @@ class AsipClient:
             sys.stdout.write(
                 "DEBUG: Setting autoreport interval {},{},{}\n".format(self.IO_SERVICE,self.ANALOG_DATA_REQUEST,interval))
 
-    # It is possible to add services at run-time:
+    # It is possible to add a service at run-time:
     def add_service(self, service_id, asip_service):
-        # If there is already a service with the same ID, we add this
-        # new one to the list. Otherwise, we create a new entry.
+        # If there is already a service with the same ID, we add this new one to the list:
         if service_id in self.__services:
-            self.__services[service_id] = asip_service
+            self.__services[service_id].append(asip_service)
+            #self.__services[service_id] = asip_service
+        # otherwise, we create a new list, a new key for the dictionary and associate the list to that key
         else:
-            self.__services.update({service_id: asip_service})
+            new_list = [asip_service]
+            self.__services.update({service_id: new_list})
 
-    # FIXME: fix code below, add a list of services instead of a single one. Maybe the previous one work instead?
-    # It is possible to add services at run-time (this one takes a list):
-    # Notice: in python we cannot have method with same name!!
+    # FIXME: maybe with python the following method is unuseful (Does the previous do the same?)
+    # It is possible to add a list of services at run-time:
+    def add_services(self, service_id, asip_ser_list):
+        # we create a new key for the dictionary and associate the list to that key
+        self.__services.update({service_id: asip_ser_list})
 
     # Just return the list of services
     def get_services(self):
@@ -184,9 +190,6 @@ class AsipClient:
             # the port data event is something like: @I,P,4,F
             # this message says the data on port 4 has a value of F
             if input_str[3] == self.PORT_DATA:
-                # We need to process port number and bit mask for it
-                #port = int(input_str[5:6])
-                #bitmask = int(input_str[7:7], 16)  # convert to base 16
                 self.__port_map.process_port_data(input_str)
             elif input_str[3] == self.PORT_MAPPING:
                 self.__port_map.process_pin_mapping(input_str)
@@ -197,14 +200,15 @@ class AsipClient:
             else:
                 if self.DEBUG:
                     sys.stdout.write("DEBUG: Service not recognised in position 3 for I/O service: {}\n".format(input_str))
-        # end of IO_SERVICE
+            # end of IO_SERVICE
 
         elif input_str[1] in self.__services.keys():
             # Is this one of the services we know? If this is the case, we call it and we process the input
             # I want a map function here!! For the moment we use a for loop...
-            self.__services[input_str[1]].process_response(input_str)
-            #for s in self.__services[input_str[1]]:
-            #    s.process_response(input_str)
+            for s in self.__services[input_str[1]]:
+                s.process_response(input_str)
+                if self.DEBUG:
+                    sys.stdout.write("DEBUG: calling process response for key {} and input {}\n".format(s,input))
 
         else:
             # We don't know what to do with it.

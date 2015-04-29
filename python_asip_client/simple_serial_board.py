@@ -1,19 +1,14 @@
 __author__ = 'Gianluca Barbon'
 
-import asip_writer
 import time
 import sys
-import platform
-import os
-import random
 import glob
+import serial
 from asip_client import AsipClient
 from threading import Thread
 from queue import Queue
 from asip_writer import AsipWriter
-# import services.AsipService
 from serial import Serial
-import serial
 
 
 class SimpleSerialBoard:
@@ -120,7 +115,7 @@ class SimpleSerialBoard:
     def close_serial(self):
         self.ser_conn.close()
 
-    # This methods retrieves the operating system and set the Arduino serial portù
+    # This methods retrieves the operating system and set the Arduino serial port
     """Lists serial ports
 
     :raises EnvironmentError:
@@ -222,15 +217,10 @@ class SimpleSerialBoard:
         # overriding run method, thread activity
         def run(self):
             temp_buff = ""
-            # global serial
             time.sleep(2)
-            nums = range(5)
-            # global _queue
-
             # TODO: implement ser.inWaiting() >= minMsgLen to check number of char in the receive buffer?
 
             while self.running:
-                # num = random.choice(nums)
                 if self.DEBUG:
                     sys.stdout.write("DEBUG: Temp buff is now {}\n".format(temp_buff))
                 val = self.ser_conn.readline()
@@ -239,8 +229,7 @@ class SimpleSerialBoard:
                 val = val.decode('utf-8')
                 if self.DEBUG:
                     sys.stdout.write("DEBUG: val value after decode is {}".format(val))
-                # if val != None:
-                if val != None and val!="\n":
+                if val is not None and val!="\n":
                     if "\n" in val:
                         # If there is at least one newline, we need to process
                         # the message (the buffer may contain previous characters).

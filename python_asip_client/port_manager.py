@@ -114,9 +114,10 @@ class PortManager:
         if self.__DEBUG:
             sys.stdout.write("DEBUG: received input string is {}\n".format(input_str))
 
+        # We need to process port number and bit mask
         port = int(input_str[5:6])
         # bitmask = struct.unpack("h", input_str[7])[0] # convert to base 16
-        #bitmask = binascii.b2a_hex(input_str[7])
+        # bitmask = binascii.b2a_hex(input_str[7])
         # bitmask = binascii.hexlify(input_str[7].encode('ascii'))
         bitmask = int(input_str[7], 16)
 
