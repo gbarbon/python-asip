@@ -6,9 +6,13 @@ import glob
 import serial
 from asip_client import AsipClient
 from threading import Thread
-from queue import Queue
+#from Queue import Queue
 from asip_writer import AsipWriter
 from serial import Serial
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 
 
 class SimpleSerialBoard:
@@ -27,7 +31,7 @@ class SimpleSerialBoard:
     #  FIXME: fix Queue dimension?
     _port = "" #serial port
     _ports = [] #serial ports array
-
+  
     # ************   END PRIVATE FIELDS DEFINITION ****************
 
     # self constructor takes the name of the serial port and it creates a Serial object
@@ -35,29 +39,29 @@ class SimpleSerialBoard:
     def __init__(self):
         # TODO: very simple implementation, need to improve
         #self.ser_conn = Serial()
-        #self.serial_port_finder()
-
+        #self.serial_port_finder()    
         try:
             # old implementation was:
             #self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
             # self.ser_conn = Serial(port=self._port, baudrate=57600)
             self.ser_conn = Serial()
-            self.serial_port_finder()
-            self.open_serial(self._ports[0], 57600)
+            portIndexToOpen = 0             
+            self.serial_port_finder(portIndexToOpen)          
+            sys.stdout.write("attempting to open {}\n".format(self._ports[portIndexToOpen]))
+            self.open_serial(self._ports[0], 57600)      
+            sys.stdout.write("port opened\n")
             self.asip = AsipClient(self.SimpleWriter(self))
         except Exception as e:
             sys.stdout.write("Exception: caught {} while init serial and asip protocols\n".format(e))
 
-        try:
-            # NOTICE: two request_port_mapping() are required. If this method is not called two times,
-            # the client won't be able to set the pin mapping
-            time.sleep(0.5)
-            self.request_port_mapping()
-            time.sleep(1)
-            self.request_port_mapping()
-            time.sleep(1)
+        try:          
             self.ListenerThread(self.queue, self.ser_conn, True, self.DEBUG).start()
             self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
+            while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
+                self.request_info()  
+                time.sleep(1.0)            
+            self.request_port_mapping()          
+            #time.sleep(1)
         except Exception as e:
             #TODO: improve exception handling
             sys.stdout.write("Exception: caught {} while launching threads\n".format(e))
@@ -82,6 +86,9 @@ class SimpleSerialBoard:
     def analog_write(self, pin, value):
         self.asip.analog_write(pin, value)
 
+    def request_info(self):
+        self.asip.request_info()
+    
     def request_port_mapping(self):
         self.asip.request_port_mapping()
 
@@ -124,7 +131,7 @@ class SimpleSerialBoard:
         A list of available serial ports
     """
     # TODO: test needed for linux and windows implementation
-    def serial_port_finder(self):
+    def serial_port_finder(self, desiredIndex):
         #system = platform.system()
         # if self.DEBUG:
         #     sys.stdout.write("DEBUG: detected os is {}\n".format(system))
@@ -146,7 +153,7 @@ class SimpleSerialBoard:
 
         system = sys.platform
         if system.startswith('win'):
-            temp_ports = ['COM' + str(i + 1) for i in range(256)]
+            temp_ports = ['COM' + str(i + 1) for i in range(255)]          
         elif system.startswith('linux'):
             # this is to exclude your current terminal "/dev/tty"
             temp_ports = glob.glob('/dev/tty[A-Za-z]*')
@@ -161,6 +168,8 @@ class SimpleSerialBoard:
                 s = self.ser_conn.open()
                 self.ser_conn.close()
                 self._ports.append(port)
+                if(len(self._ports) > desiredIndex):
+                    return  # we have found the desired port
             except serial.SerialException:
                 pass
         if self.DEBUG:
@@ -182,6 +191,7 @@ class SimpleSerialBoard:
         # val is a string
         # TODO: improve try catch
         def write(self, val):
+            #print(val), 
             if self.parent.ser_conn.isOpen():
                 try:
                     self.parent.ser_conn.write(val.encode())

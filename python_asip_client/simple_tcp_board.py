@@ -43,14 +43,20 @@ class SimpleTCPBoard:
         try:
             # NOTICE: two request_port_mapping() are required. If this method is not called two times,
             # the client won't be able to set the pin mapping
-            time.sleep(0.5)
-            self.request_port_mapping()
-            time.sleep(1)
-            self.request_port_mapping()
-            time.sleep(1)
-            self.asip.set_auto_report_interval(0)
+            # time.sleep(0.5)
+            # self.request_port_mapping()
+            # time.sleep(1)
+            # self.request_port_mapping()
+            # time.sleep(1)
+            # self.asip.set_auto_report_interval(0)
             self.ListenerThread(self.queue, self.sock_conn, True, self.DEBUG).start()
             self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
+
+            # TODO: check following code
+            while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
+                self.request_info()
+                time.sleep(1.0)
+            self.request_port_mapping()
         except Exception as e:
             #TODO: improve exception handling
             sys.stdout.write("Exception: caught {} while launching threads\n".format(e))
@@ -74,6 +80,9 @@ class SimpleTCPBoard:
 
     def analog_write(self, pin, value):
         self.asip.analog_write(pin, value)
+
+    def request_info(self):
+        self.asip.request_info()
 
     def request_port_mapping(self):
         self.asip.request_port_mapping()
