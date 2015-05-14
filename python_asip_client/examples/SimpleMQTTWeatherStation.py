@@ -24,8 +24,8 @@ class SimpleMQTTWeatherStation(SimpleMQTTBoard):
             self.add_service('P', self.p0)
             self.add_service('H', self.h0)
             time.sleep(0.3)
-            self.p0.enable_continuous_reporting('500')
-            self.h0.enable_continuous_reporting('500')
+            self.p0.enable_continuous_reporting('1000')
+            self.h0.enable_continuous_reporting('1000')
             time.sleep(0.1)
             self.get_asip_client().set_auto_report_interval('0')
         except Exception as e:

@@ -35,6 +35,6 @@ class SimpleBlink(SimpleMQTTBoard):
 
 
 # test SimpleBlink
-Broker = "192.168.0.103"
+Broker = "192.168.0.102"
 BoardID = "testID"
 SimpleBlink(Broker, BoardID).main()
