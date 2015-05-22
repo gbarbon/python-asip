@@ -11,8 +11,18 @@ from abc import ABCMeta, abstractmethod
 #     def write(self, val):
 #         raise NotImplementedError( "Should have implemented this" )
 
-class AsipWriter (metaclass=ABCMeta):
+
+# python 2.7 version
+class AsipWriter(object):
+    __metaclass__=ABCMeta
 
     @abstractmethod
     def write(self, val):
         pass
+
+# python 3 version
+# class AsipWriter (metaclass=ABCMeta):
+#
+#     @abstractmethod
+#     def write(self, val):
+#         pass

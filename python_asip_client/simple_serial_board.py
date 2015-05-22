@@ -4,6 +4,7 @@ import time
 import sys
 import glob
 import serial
+import select
 from asip_client import AsipClient
 from threading import Thread
 #from Queue import Queue
@@ -31,6 +32,7 @@ class SimpleSerialBoard:
     #  FIXME: fix Queue dimension?
     _port = "" #serial port
     _ports = [] #serial ports array
+    __running = False
   
     # ************   END PRIVATE FIELDS DEFINITION ****************
 
@@ -39,14 +41,14 @@ class SimpleSerialBoard:
     def __init__(self):
         # TODO: very simple implementation, need to improve
         #self.ser_conn = Serial()
-        #self.serial_port_finder()    
+        #self.serial_port_finder()
         try:
             # old implementation was:
             #self.ser_conn = Serial(port='/dev/cu.usbmodemfd121', baudrate=57600)
             # self.ser_conn = Serial(port=self._port, baudrate=57600)
             self.ser_conn = Serial()
             portIndexToOpen = 0             
-            self.serial_port_finder(portIndexToOpen)          
+            self.serial_port_finder(portIndexToOpen)
             sys.stdout.write("attempting to open {}\n".format(self._ports[portIndexToOpen]))
             self.open_serial(self._ports[0], 57600)      
             sys.stdout.write("port opened\n")
@@ -54,14 +56,18 @@ class SimpleSerialBoard:
         except Exception as e:
             sys.stdout.write("Exception: caught {} while init serial and asip protocols\n".format(e))
 
-        try:          
-            self.ListenerThread(self.queue, self.ser_conn, True, self.DEBUG).start()
-            self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
-            while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
-                self.request_info()  
-                time.sleep(1.0)            
+        try:
+            self.__running = True
+            self.ListenerThread(self.queue, self.ser_conn, self.__running, self.DEBUG).start()
+            self.ConsumerThread(self.queue, self.asip, self.__running, self.DEBUG).start()
+            self.KeyboardListener(self).start()
+            #while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
+                #self.request_info()
+                #time.sleep(1.0)
             self.request_port_mapping()          
-            #time.sleep(1)
+            time.sleep(1)
+            self.request_port_mapping()
+            time.sleep(1)
         except Exception as e:
             #TODO: improve exception handling
             sys.stdout.write("Exception: caught {} while launching threads\n".format(e))
@@ -111,6 +117,7 @@ class SimpleSerialBoard:
             self.ser_conn.close()
         self.ser_conn.port = port
         self.ser_conn.baudrate = baudrate
+        # self.ser_conn.timeout = None # 0 or None?
         self.ser_conn.open()
         # Toggle DTR to reset Arduino
         self.ser_conn.setDTR(False)
@@ -159,6 +166,14 @@ class SimpleSerialBoard:
             temp_ports = glob.glob('/dev/tty[A-Za-z]*')
         elif system.startswith('darwin'):
             temp_ports = glob.glob('/dev/tty.usbmodem*')
+            cp2104 = glob.glob('/dev/tty.SLAB_USBtoUART') # append usb to serial converter cp2104
+            ft232rl = glob.glob('/dev/tty.usbserial-A9MP5N37') # append usb to serial converter ft232rl
+            #temp_ports = glob.glob('/dev/tty.SLAB_USBtoUART')
+            #temp_ports = glob.glob('/dev/tty.usbserial-A9MP5N37')
+            if cp2104 is not None:
+                temp_ports += cp2104
+            if ft232rl is not None:
+                temp_ports += ft232rl
         else:
             raise EnvironmentError('Unsupported platform')
 
@@ -194,11 +209,43 @@ class SimpleSerialBoard:
             #print(val), 
             if self.parent.ser_conn.isOpen():
                 try:
-                    self.parent.ser_conn.write(val.encode())
+                    temp = val.encode()
+                    self.parent.ser_conn.write(temp)
+                    if self.parent.DEBUG:
+                        sys.stdout.write("DEBUG: just wrote in serial {}\n".format(temp))
                 except (OSError, serial.SerialException):
                     pass
             else:
                 raise serial.SerialException
+
+    class KeyboardListener(Thread):
+
+        def __init__(self, parent):
+            Thread.__init__(self)
+            self.parent = parent
+            self.running = True
+
+        # if needed, kill will stops the loop inside run method
+        def kill(self):
+            self.running = False
+
+        def run(self):
+            while self.running:
+                if self.heardEnter():
+                    sys.stdout.write("*** Closing ***hty\n")
+                    self.parent.__running = False
+                    time.sleep(0.5)
+                    self.parent.close_serial()
+                    self.running = False
+
+        def heardEnter(self):
+            i,o,e = select.select([sys.stdin],[],[],0.0001)
+            for s in i:
+                if s == sys.stdin:
+                    input = sys.stdin.readline()
+                    return True
+                return False
+
 
     # ListenerThread and ConsumerThread are implemented following the Producer/Consumer pattern
     # A class for a listener that rad the serial stream and put incoming messages on a queue
@@ -229,39 +276,65 @@ class SimpleSerialBoard:
             temp_buff = ""
             time.sleep(2)
             # TODO: implement ser.inWaiting() >= minMsgLen to check number of char in the receive buffer?
+            serBuffer = ""
 
             while self.running:
-                if self.DEBUG:
-                    sys.stdout.write("DEBUG: Temp buff is now {}\n".format(temp_buff))
-                val = self.ser_conn.readline()
-                if self.DEBUG:
-                    sys.stdout.write("DEBUG: val value when retrieving from serial is {}\n".format(val))
-                val = val.decode('utf-8')
-                if self.DEBUG:
-                    sys.stdout.write("DEBUG: val value after decode is {}".format(val))
-                if val is not None and val!="\n":
-                    if "\n" in val:
-                        # If there is at least one newline, we need to process
-                        # the message (the buffer may contain previous characters).
+                # #if self.DEBUG:
+                # #    sys.stdout.write("DEBUG: Temp buff is now {}\n".format(temp_buff))
+                # time.sleep(0.1)
+                # val = self.ser_conn.readline()
+                # #val = self.ser_conn.read()
+                # if self.DEBUG:
+                #     sys.stdout.write("DEBUG: val value when retrieving from serial is {}\n".format(val))
+                # val = val.decode('utf-8', errors= 'ignore')
+                # if self.DEBUG:
+                #     sys.stdout.write("DEBUG: val value after decode is {}".format(val))
+                # if val is not None and val!="\n" and val!=" ":
+                #     if "\n" in val:
+                #         # If there is at least one newline, we need to process
+                #         # the message (the buffer may contain previous characters).
+                #
+                #         while ("\n" in val and len(val) > 0):
+                #             # But remember that there could be more than one newline in the buffer
+                #             temp_buff += (val[0:val.index("\n")])
+                #             self.queue.put(temp_buff)
+                #             if self.DEBUG:
+                #                 sys.stdout.write("DEBUG: Serial produced {}\n".format(temp_buff))
+                #             temp_buff = ""
+                #             val = val[val.index("\n")+1:]
+                #             if self.DEBUG:
+                #                 sys.stdout.write("DEBUG: Now val is {}\n".format(val))
+                #         if len(val)>0:
+                #             temp_buff = val
+                #         if self.DEBUG:
+                #             sys.stdout.write("DEBUG: After internal while buffer is {}\n".format(temp_buff))
+                #     else:
+                #         temp_buff += val
+                #         if self.DEBUG:
+                #             sys.stdout.write("DEBUG: else case, buff is equal to val, so they are {}\n".format(temp_buff))
+                try:
+                    while True:
+                        c = self.ser_conn.read() # attempt to read a character from Serial
+                        c = c.decode('utf-8', errors= 'ignore')
+                        #was anything read?
+                        if len(c) == 0:
+                            break
 
-                        while ("\n" in val and len(val) > 0):
-                            # But remember that there could be more than one newline in the buffer
-                            temp_buff += (val[0:val.index("\n")])
-                            self.queue.put(temp_buff)
+                        # check if character is a delimiter
+                        if c == '\r':
+                            c = '' # ignore CR
+                        elif c == '\n':
+                            serBuffer += "\n" # add the newline to the buffer
                             if self.DEBUG:
-                                sys.stdout.write("DEBUG: Serial produced {}\n".format(temp_buff))
-                            temp_buff = ""
-                            val = val[val.index("\n")+1:]
-                            if self.DEBUG:
-                                sys.stdout.write("DEBUG: Now val is {}\n".format(val))
-                        if len(val)>0:
-                            temp_buff = val
-                        if self.DEBUG:
-                            sys.stdout.write("DEBUG: After internal while buffer is {}\n".format(temp_buff))
-                    else:
-                        temp_buff += val
-                        if self.DEBUG:
-                            sys.stdout.write("DEBUG: else case, buff is equal to val, so they are {}\n".format(temp_buff))
+                                sys.stdout.write("Serial buffer is now {}\n".format(serBuffer))
+                            self.queue.put(serBuffer)
+                            serBuffer = '' # empty the buffer
+                        else:
+                            #print("Try to print: {}".format(c))
+                            serBuffer += c # add to the buffer
+                except (OSError, serial.SerialException):
+                    self.running = False
+                    sys.stdout.write("Serial Exception in listener\n")
 
     # A class that reads the queue and launch the processInput method of the AispClient.
     class ConsumerThread(Thread):

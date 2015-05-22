@@ -24,7 +24,7 @@ class SimpleTCPBoard:
     queue = Queue(10)  # Buffer # TODO: use pipe instead of queue for better performances
     #  FIXME: fix Queue dimension?
     IPaddress = ""
-    _TCPport = 6789
+    _TCPport = 5507
 
     # ************   END PRIVATE FIELDS DEFINITION ****************
 
@@ -33,6 +33,7 @@ class SimpleTCPBoard:
     def __init__(self, IPaddress):
         try:
             self.IPaddress = IPaddress
+            sys.stdout.write("Attempting to connect to {} and port {}\n".format(self.IPaddress, self._TCPport))
             self.sock_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock_conn.connect((self.IPaddress, self._TCPport))
 
@@ -52,6 +53,8 @@ class SimpleTCPBoard:
             self.ListenerThread(self.queue, self.sock_conn, True, self.DEBUG).start()
             self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
 
+
+            self.set_auto_report_interval(0)
             # TODO: check following code
             while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
                 self.request_info()
@@ -130,10 +133,12 @@ class SimpleTCPBoard:
                    sys.stdout.write("DEBUG: sending {}\n".format(val))
                 #temp = self.writeUTF(val)
                 #self.sock_conn.sendall((val+'\n').encode('utf-8'))
-                temp = val + '\r\n'
+                temp = val + '\n'
                 #self.sock_conn.send(b"temp") # temp.encode('utf-8')
-                self.sock_conn.sendall(bytes("hello tom\n",encoding='utf8'))
+                self.sock_conn.sendall(bytes(temp,encoding='utf8'))
                 # self.parent.sock_conn.send(val)
+                #temp.encode('utf-8')
+                self.sock_conn.send(temp)
             except Exception as e:
                 pass
 
@@ -178,7 +183,7 @@ class SimpleTCPBoard:
 
             while self.running:
                 data = self.sock_conn.recv(512).decode('utf-8')
-                data = data[2:]
+                #data = data[2:]
                 if not data:
                     pass
                 else:

@@ -161,10 +161,15 @@ class AsipClient:
         if service_id in self.__services:
             self.__services[service_id].append(asip_service)
             #self.__services[service_id] = asip_service
+            #print("Updated to service_id {} the asip_service {}".format(service_id, asip_service))
+            #print("__services with key {} is now {}".format(service_id, self.__services[service_id]))
         # otherwise, we create a new list, a new key for the dictionary and associate the list to that key
         else:
-            new_list = [asip_service]
+            # new_list = [asip_service]
+            new_list = asip_service
             self.__services.update({service_id: new_list})
+            #print("Added service_id {} with list asip_service {}".format(service_id, new_list))
+            #print("__services with key {} is now {}".format(service_id, self.__services[service_id]))
 
     # FIXME: maybe with python the following method is unuseful (Does the previous do the same?)
     # It is possible to add a list of services at run-time:
@@ -228,6 +233,7 @@ class AsipClient:
             # Is this one of the services we know? If this is the case, we call it and we process the input
             # I want a map function here!! For the moment we use a for loop...
             for s in self.__services[input_str[1]]:
+                #print("s is {}".format(s))
                 s.process_response(input_str)
                 if self.DEBUG:
                     sys.stdout.write("DEBUG: calling process response for key {} and input {}\n".format(s,input))     

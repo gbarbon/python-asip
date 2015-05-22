@@ -27,14 +27,14 @@ class SimpleBlink(SimpleTCPBoard):
         while True:
             try:
                 self.digital_write(13, 1)
-                time.sleep(0.25)
+                time.sleep(1)
                 self.digital_write(13, 0)
-                time.sleep(0.25)
+                time.sleep(1)
             except Exception as e:
                 sys.stdout.write("Exception: caught {} in digital_write".format(e))
 
 
 # test SimpleBlink
 #IPaddress = "192.168.0.102"
-IPaddress = "127.0.0.1"
+IPaddress = "192.168.0.101"
 SimpleBlink(IPaddress).main()

@@ -45,7 +45,7 @@ class SparkfunWSService(AsipService):
             return self._lastPressure
 
         def process_response(self, message):
-            # A response for a message is something like "@D,e,1,25,35,..."
+            # A response for a message is something like "@D,e,1,25,35,..." # FIXME: wrong example
             if message[3] != self.PRESSURE_EVENT:
                 # FIXME: improve error checking
                 # We have received a message but it is not a distance reporting event
@@ -86,16 +86,18 @@ class SparkfunWSService(AsipService):
             self._serviceID = id
 
         def request_humidity(self):
-            self.asip.get_asip_writer().write(self._serviceID+","+self.REQUEST_SINGLE_HUMIDITY+"\n")
-
+            #self.asip.get_asip_writer().write(self._serviceID+","+self.REQUEST_SINGLE_HUMIDITY+"\n")
+            self.asip.get_asip_writer().write("{},{}".format(self._serviceID, self.REQUEST_SINGLE_HUMIDITY))
         def enable_continuous_reporting(self,interval):
-            self.asip.get_asip_writer().write(self._serviceID+","+AsipService.AUTOEVENT_REQUEST+","+interval+"\n")
+            #self.asip.get_asip_writer().write(self._serviceID+","+AsipService.AUTOEVENT_REQUEST+","+interval+"\n")
+            self.asip.get_asip_writer().write("{},{},{}".format(
+                self._serviceID, AsipService.AUTOEVENT_REQUEST, interval))
 
         def get_humidity(self):
             return self._lastHumidity
 
         def process_response(self, message):
-            # A response for a message is something like "@D,e,1,25,35,..."
+            # A response for a message is something like "@D,e,1,25,35,..." # FIXME: wrong example
             if message[3] != self.HUMIDITY_EVENT:
                 # FIXME: improve error checking
                 # We have received a message but it is not a distance reporting event
