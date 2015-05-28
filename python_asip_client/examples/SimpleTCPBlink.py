@@ -16,6 +16,10 @@ class SimpleBlink(SimpleTCPBoard):
         try:
             #time.sleep(1)
             #self.request_port_mapping()
+            while not self.asip.check_mapping():
+                self.request_port_mapping()
+                time.sleep(0.1)
+            print("**** Everything check ****")
             time.sleep(0.5)
             self.set_pin_mode(13, AsipClient.OUTPUT)
             time.sleep(0.5)
@@ -35,6 +39,7 @@ class SimpleBlink(SimpleTCPBoard):
 
 
 # test SimpleBlink
-#IPaddress = "192.168.0.102"
 IPaddress = "192.168.0.101"
+#IPaddress = "127.0.0.1"
+#IPaddress = "dietpi"
 SimpleBlink(IPaddress).main()

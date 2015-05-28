@@ -185,6 +185,10 @@ class AsipClient:
     def get_digital_pins(self):
         return self.__port_map.get_digital_pins()
 
+    # check if the mapping is set
+    def check_mapping(self):
+        return self.__port_map.port_mapping_is_set()
+
     # Getter and Setter for output channel
     def get_asip_writer(self):
         return self.__out
@@ -210,7 +214,7 @@ class AsipClient:
 
             # the port data event is something like: @I,P,4,F
             # this message says the data on port 4 has a value of F
-            if input_str[3] == self.PORT_DATA:
+            if input_str[3] == self.PORT_DATA and self.check_mapping():
                 self.__port_map.process_port_data(input_str)
             elif input_str[3] == self.PORT_MAPPING:
                 self.__port_map.process_pin_mapping(input_str)

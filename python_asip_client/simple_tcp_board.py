@@ -4,10 +4,12 @@ import time
 import sys
 from asip_client import AsipClient
 from threading import Thread
-from queue import Queue
 from asip_writer import AsipWriter
 import socket
-import struct
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 
 class SimpleTCPBoard:
 
@@ -24,7 +26,7 @@ class SimpleTCPBoard:
     queue = Queue(10)  # Buffer # TODO: use pipe instead of queue for better performances
     #  FIXME: fix Queue dimension?
     IPaddress = ""
-    _TCPport = 5507
+    _TCPport = 5005
 
     # ************   END PRIVATE FIELDS DEFINITION ****************
 
@@ -44,22 +46,18 @@ class SimpleTCPBoard:
         try:
             # NOTICE: two request_port_mapping() are required. If this method is not called two times,
             # the client won't be able to set the pin mapping
-            # time.sleep(0.5)
-            # self.request_port_mapping()
-            # time.sleep(1)
-            # self.request_port_mapping()
-            # time.sleep(1)
-            # self.asip.set_auto_report_interval(0)
             self.ListenerThread(self.queue, self.sock_conn, True, self.DEBUG).start()
             self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
-
-
             self.set_auto_report_interval(0)
             # TODO: check following code
-            while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
-                self.request_info()
-                time.sleep(1.0)
-            self.request_port_mapping()
+            # while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
+            #     self.request_info()
+            #     time.sleep(1.0)
+            while not self.asip.check_mapping():
+                self.request_port_mapping()
+                time.sleep(0.25)
+            sys.stdout.write("**** Everything check ****\n")
+
         except Exception as e:
             #TODO: improve exception handling
             sys.stdout.write("Exception: caught {} while launching threads\n".format(e))
@@ -129,16 +127,18 @@ class SimpleTCPBoard:
         def write(self, val):
             # TODO: insert a way to check weather the connection is still open or not
             try:
-                if self.parent.DEBUG:
-                   sys.stdout.write("DEBUG: sending {}\n".format(val))
+                #if self.parent.DEBUG:
+                   #sys.stdout.write("DEBUG: sending {}\n".format(val))
                 #temp = self.writeUTF(val)
                 #self.sock_conn.sendall((val+'\n').encode('utf-8'))
-                temp = val + '\n'
+                temp = val #+ '\n'
                 #self.sock_conn.send(b"temp") # temp.encode('utf-8')
-                self.sock_conn.sendall(bytes(temp,encoding='utf8'))
+                #self.sock_conn.sendall(bytes(temp,encoding='utf8'))
                 # self.parent.sock_conn.send(val)
                 #temp.encode('utf-8')
                 self.sock_conn.send(temp)
+                if self.parent.DEBUG:
+                   sys.stdout.write("DEBUG: sent {}\n".format(temp))
             except Exception as e:
                 pass
 
@@ -160,6 +160,7 @@ class SimpleTCPBoard:
         sock_conn = None
         running = False
         DEBUG = False
+        BUFFER_SIZE = 256
 
         # overriding constructor
         def __init__(self, queue, sock_conn, running, debug):
@@ -179,16 +180,20 @@ class SimpleTCPBoard:
         def run(self):
             temp_buff = ""
             time.sleep(2)
+            write_buffer = ""
             # TODO: implement ser.inWaiting() >= minMsgLen to check number of char in the receive buffer?
 
             while self.running:
-                data = self.sock_conn.recv(512).decode('utf-8')
-                #data = data[2:]
-                if not data:
-                    pass
-                else:
-                    self.queue.put(data)
-                    print("Received {}\n".format(data))
+                # data = self.sock_conn.recv(512).decode('utf-8')
+                # #data = data[2:]
+                # if not data:
+                #     pass
+                # else:
+                #     self.queue.put(data)
+                #     print("Received {}\n".format(data))
+
+
+
                 # if self.DEBUG:
                 #     sys.stdout.write("DEBUG: Temp buff is now {}\n".format(temp_buff))
                 # val = self.sock_conn.recv(2)
@@ -222,6 +227,29 @@ class SimpleTCPBoard:
                 #         temp_buff += val
                 #         if self.DEBUG:
                 #             sys.stdout.write("DEBUG: else case, buff is equal to val, so they are {}\n".format(temp_buff))
+
+                data = self.sock_conn.recv(self.BUFFER_SIZE)
+                print("Received data is: {}".format(data))
+                if data != '\r' and data != '\n' and data !=' ' and data is not None: # ignore empty lines
+                    if "\n" in data:
+                        # If there is at least one newline, we need to process
+                        # the message (the buffer may contain previous characters).
+                        while ("\n" in data and len(data) > 0):
+                            # But remember that there could be more than one newline in the buffer
+                            write_buffer += (data[0:data.index("\n")])
+                            temp = write_buffer.encode()
+                            self.queue.put(temp)
+                            #print("Inserting in queue {}".format(temp))
+                            write_buffer = ""
+                            if data[data.index("\n")+1:]=='\n':
+                                data = ''
+                                break
+                            else:
+                                data = data[data.index("\n")+1:]
+                        if len(data)>0 and data not in ('\r','\n',' '):
+                            write_buffer = data
+                    else:
+                        write_buffer += data
 
 
     # A class that reads the queue and launch the processInput method of the AispClient.

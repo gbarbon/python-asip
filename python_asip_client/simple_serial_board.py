@@ -61,6 +61,7 @@ class SimpleSerialBoard:
             self.ListenerThread(self.queue, self.ser_conn, self.__running, self.DEBUG).start()
             self.ConsumerThread(self.queue, self.asip, self.__running, self.DEBUG).start()
             self.KeyboardListener(self).start()
+            print("****** I am here ******")
             #while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
                 #self.request_info()
                 #time.sleep(1.0)
@@ -68,6 +69,10 @@ class SimpleSerialBoard:
             time.sleep(1)
             self.request_port_mapping()
             time.sleep(1)
+            while not self.asip.check_mapping():
+                self.request_port_mapping()
+                time.sleep(0.1)
+            print("**** Everything check ****")
         except Exception as e:
             #TODO: improve exception handling
             sys.stdout.write("Exception: caught {} while launching threads\n".format(e))
@@ -168,12 +173,15 @@ class SimpleSerialBoard:
             temp_ports = glob.glob('/dev/tty.usbmodem*')
             cp2104 = glob.glob('/dev/tty.SLAB_USBtoUART') # append usb to serial converter cp2104
             ft232rl = glob.glob('/dev/tty.usbserial-A9MP5N37') # append usb to serial converter ft232rl
+            fth = glob.glob('/dev/tty.usbserial-FTHI5TLH') # append usb to serial cable
             #temp_ports = glob.glob('/dev/tty.SLAB_USBtoUART')
             #temp_ports = glob.glob('/dev/tty.usbserial-A9MP5N37')
             if cp2104 is not None:
                 temp_ports += cp2104
             if ft232rl is not None:
                 temp_ports += ft232rl
+            if fth is not None:
+                temp_ports += fth
         else:
             raise EnvironmentError('Unsupported platform')
 

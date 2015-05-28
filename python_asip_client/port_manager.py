@@ -51,6 +51,10 @@ class PortManager:
         except:
             pass
 
+    # check if the mapping is empty
+    def port_mapping_is_set(self):
+        return bool(self.__port_mapping)
+
     def digital_read(self, pin):
         # FIXME: fix try check (use raise instead?)
         try:
