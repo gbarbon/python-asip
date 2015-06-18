@@ -187,6 +187,7 @@ class MQTTMirtoPIDFollower(MQTTMirtoRobot):
 
             self.navigate()
 
+        # TODO: argument not working now, improvement needed
         elif len(argv)== 8:
             # the order is: power, maxDelta, Kp, Kd, Ki, freq, cutoffIR
             try:
@@ -212,6 +213,6 @@ class MQTTMirtoPIDFollower(MQTTMirtoRobot):
 
 if __name__ == "__main__":
     Broker = "192.168.0.103"
-    BoardID = "board4"
+    BoardID = "test" # "test" is the name of the board in the python bridge, while "board4" is the name in the java one
     MQTTMirtoPIDFollower(Broker, BoardID).main()
     #MQTTMirtoPIDFollower(Broker, BoardID).main(sys.argv[1:])

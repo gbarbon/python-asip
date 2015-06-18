@@ -4,7 +4,10 @@ import time
 import sys
 from asip_client import AsipClient
 from threading import Thread
-from queue import Queue
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 from asip_writer import AsipWriter
 import paho.mqtt.client as mqtt
 
@@ -13,7 +16,7 @@ class SimpleMQTTBoard:
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
 
-    DEBUG = False
+    DEBUG = True
 
     # ************   END CONSTANTS DEFINITION ****************
 
@@ -68,10 +71,14 @@ class SimpleMQTTBoard:
             self.mqtt_client.loop_start() # starting mqtt loop
 
             # TODO: check following code
-            while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
-                self.request_info()
-                time.sleep(1.0)
-            self.request_port_mapping()
+            # while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
+            #     self.request_info()
+            #     time.sleep(1.0)
+            while not self.asip.check_mapping():
+                print("Requesting mapping")
+                self.request_port_mapping()
+                time.sleep(0.25)
+            sys.stdout.write("**** Everything check ****\n")
         except Exception as e:
             #TODO: improve exception handling
             sys.stdout.write("Exception: caught {} while launching threads\n".format(e))

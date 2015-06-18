@@ -20,7 +20,7 @@ class SimpleSerialBoard:
 
     # ************   BEGIN CONSTANTS DEFINITION ****************
 
-    DEBUG = False
+    DEBUG = True
 
     # ************   END CONSTANTS DEFINITION ****************
 
@@ -174,6 +174,7 @@ class SimpleSerialBoard:
             cp2104 = glob.glob('/dev/tty.SLAB_USBtoUART') # append usb to serial converter cp2104
             ft232rl = glob.glob('/dev/tty.usbserial-A9MP5N37') # append usb to serial converter ft232rl
             fth = glob.glob('/dev/tty.usbserial-FTHI5TLH') # append usb to serial cable
+            # new = glob.glob('/dev/tty.usbmodemfa131')
             #temp_ports = glob.glob('/dev/tty.SLAB_USBtoUART')
             #temp_ports = glob.glob('/dev/tty.usbserial-A9MP5N37')
             if cp2104 is not None:
@@ -182,6 +183,8 @@ class SimpleSerialBoard:
                 temp_ports += ft232rl
             if fth is not None:
                 temp_ports += fth
+            #if new is not None: # FIXME: REMOVE!!! Only used for tests
+            #    temp_ports = new
         else:
             raise EnvironmentError('Unsupported platform')
 

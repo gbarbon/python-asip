@@ -4,6 +4,7 @@ import time
 import sys
 from asip_client import AsipClient
 from threading import Thread
+import threading
 from asip_writer import AsipWriter
 import socket
 try:
@@ -26,6 +27,7 @@ class SimpleTCPBoard:
     queue = Queue(10)  # Buffer # TODO: use pipe instead of queue for better performances
     #  FIXME: fix Queue dimension?
     IPaddress = ""
+    #_TCPport = 6789 # the one used by the java bridge by franco in mirto
     _TCPport = 5005
 
     # ************   END PRIVATE FIELDS DEFINITION ****************
@@ -38,30 +40,56 @@ class SimpleTCPBoard:
             sys.stdout.write("Attempting to connect to {} and port {}\n".format(self.IPaddress, self._TCPport))
             self.sock_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock_conn.connect((self.IPaddress, self._TCPport))
-
             self.asip = AsipClient(self.SimpleTCPWriter(self, sock_conn=self.sock_conn))
         except Exception as e:
-            sys.stdout.write("Exception: caught {} while init tcp socket and asip protocols\n".format(e))
+            sys.stdout.write("Exception caught in init tcp socket and asip protocols {}\n".format(e))
+        else:
+            worker = []
+            try:
+                # NOTICE: two request_port_mapping() are required. If this method is not called two times,
+                # the client won't be able to set the pin mapping
+                worker.append(self.ListenerThread(self.queue, self.sock_conn, True, self.DEBUG))
+                worker.append(self.ConsumerThread(self.queue, self.asip, True, self.DEBUG))
+                for i in worker:
+                    if self.DEBUG:
+                        print("Starting {}".format(i))
+                    i.start()
+                all_alive = False
+                while not all_alive: # cheching that every thread is alive
+                    # TODO: improve syntax in following line
+                    if worker[0].is_alive() and worker[1].is_alive():
+                        all_alive = True
 
-        try:
-            # NOTICE: two request_port_mapping() are required. If this method is not called two times,
-            # the client won't be able to set the pin mapping
-            self.ListenerThread(self.queue, self.sock_conn, True, self.DEBUG).start()
-            self.ConsumerThread(self.queue, self.asip, True, self.DEBUG).start()
-            self.set_auto_report_interval(0)
-            # TODO: check following code
-            # while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
-            #     self.request_info()
-            #     time.sleep(1.0)
-            while not self.asip.check_mapping():
-                self.request_port_mapping()
-                time.sleep(0.25)
-            sys.stdout.write("**** Everything check ****\n")
+                # TODO: check following code
+                # while self.asip.isVersionOk() == False:  # flag will be set to true when valid version message is received
+                #     self.request_info()
+                #     time.sleep(1.0)
+                active_workers = threading.active_count()
+                sys.stdout.write("*** All threads created and alive ***\n")
+            except Exception as e:
+                sys.stdout.write("Caught exception in thread launch: {}\n".format(e))
+                self.close_tcp_conn()
+                self.thread_killer(worker)
+                sys.exit(1)
+            else:
+                try:
 
-        except Exception as e:
-            #TODO: improve exception handling
-            sys.stdout.write("Exception: caught {} while launching threads\n".format(e))
-
+                    while not self.asip.check_mapping():
+                        self.request_port_mapping()
+                        time.sleep(0.25)
+                    self.set_auto_report_interval(0)
+                    # checking that a thread is not killed by an exception
+                    while len(threading.enumerate()) == active_workers:
+                        pass
+                # KeyboardInterrupt handling in order to close every thread correctly
+                except KeyboardInterrupt:
+                    sys.stdout.write("KeyboardInterrupt: attempting to close threads.\n")
+                finally:
+                    # killing thread in both cases: keyboardinterrupt or exception in one of the thread
+                    self.close_tcp_conn()
+                    self.thread_killer(worker)
+                    sys.stdout.write("All terminated.\n")
+                    sys.exit()
 
     # ************ BEGIN PUBLIC METHODS *************
 
@@ -106,6 +134,20 @@ class SimpleTCPBoard:
 
     def close_tcp_conn(self):
         self.sock_conn.close()
+
+    # stops and wait for the join for threads in the given pool
+    # TODO: improve in case of timeout of the join
+    def thread_killer(self, thread_pool):
+        for i in thread_pool:
+            i.stop()
+            if self.DEBUG:
+                sys.stdout.write("Event for {} successfully set\n".format(i))
+        sys.stdout.write("Waiting for join\n")
+        for i in thread_pool:
+            i.join()
+            if self.DEBUG:
+                sys.stdout.write("Thread {} successfully closed\n".format(i))
+        return True
 
     # ************ END PRIVATE METHODS *************
 
@@ -169,12 +211,13 @@ class SimpleTCPBoard:
             self.sock_conn = sock_conn
             self.running = running
             self.DEBUG = debug
+            self._stop = threading.Event()
             if self.DEBUG:
                 sys.stdout.write("DEBUG: listener thread process created \n")
 
         # if needed, kill will stops the loop inside run method
-        def kill(self):
-            self.running = False
+        def stop(self):
+            self._stop.set()
 
         # overriding run method, thread activity
         def run(self):
@@ -183,7 +226,7 @@ class SimpleTCPBoard:
             write_buffer = ""
             # TODO: implement ser.inWaiting() >= minMsgLen to check number of char in the receive buffer?
 
-            while self.running:
+            while not self._stop.is_set():
                 # data = self.sock_conn.recv(512).decode('utf-8')
                 # #data = data[2:]
                 # if not data:
@@ -229,7 +272,7 @@ class SimpleTCPBoard:
                 #             sys.stdout.write("DEBUG: else case, buff is equal to val, so they are {}\n".format(temp_buff))
 
                 data = self.sock_conn.recv(self.BUFFER_SIZE)
-                print("Received data is: {}".format(data))
+                # print("Received data is: {}".format(data))
                 if data != '\r' and data != '\n' and data !=' ' and data is not None: # ignore empty lines
                     if "\n" in data:
                         # If there is at least one newline, we need to process
@@ -267,20 +310,21 @@ class SimpleTCPBoard:
             self.asip = asip
             self.running = running
             self.DEBUG = debug
+            self._stop = threading.Event()
             if self.DEBUG:
                 sys.stdout.write("DEBUG: consumer thread created \n")
 
         # if needed, kill will stops the loop inside run method
-        def kill(self):
-            self.running = False
+        def stop(self):
+            self._stop.set()
 
         # overriding run method, thread activity
         def run(self):
             # global _queue
             # global asip
-            while self.running:
+            while not self._stop.is_set():
                 temp = self.queue.get()
-                print("Consumer, calling process_input with input: {}\n".format(temp))
+                # print("Consumer, calling process_input with input: {}\n".format(temp))
                 self.asip.process_input(temp)
                 self.queue.task_done()
                 # if temp == "\n":

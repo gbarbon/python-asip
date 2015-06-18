@@ -1,40 +1,38 @@
 __author__ = 'Gianluca Barbon'
 
-from asip_client import AsipClient
-from simple_mqtt_board import SimpleMQTTBoard
+from mqtt_board import MQTTBoard
 import sys
 import time
 
 
 # A simple board with just the I/O services.
 # The main method does a standard blink test.
-class SimpleBlink(SimpleMQTTBoard):
-
-    __DEBUG = True
+class SimpleMQTTBlink(MQTTBoard):
 
     def main(self):
         try:
-            #time.sleep(1)
-            #self.request_port_mapping()
             time.sleep(0.5)
-            self.set_pin_mode(13, AsipClient.OUTPUT)
-            time.sleep(0.5)
-            self.set_pin_mode(2, AsipClient.INPUT_PULLUP)
+            self.asip.set_pin_mode(13, self.asip.OUTPUT)
             time.sleep(0.5)
         except Exception as e:
-            sys.stdout.write("Exception: caught {} in setting pin mode".format(e))
+            sys.stdout.write("Exception caught while setting pin mode: {}\n".format(e))
+            self.thread_killer()
+            sys.exit(1)
 
         while True:
             try:
-                self.digital_write(13, 1)
-                time.sleep(0.25)
-                self.digital_write(13, 0)
-                time.sleep(0.25)
-            except Exception as e:
-                sys.stdout.write("Exception: caught {} in digital_write".format(e))
+                self.asip.digital_write(13, self.asip.HIGH)
+                time.sleep(1.25)
+                self.asip.digital_write(13, self.asip.LOW)
+                time.sleep(1.25)
+            except (KeyboardInterrupt, Exception) as e:
+                sys.stdout.write("Caught exception in main loop: {}\n".format(e))
+                self.thread_killer()
+                sys.exit()
 
 
 # test SimpleBlink
-Broker = "192.168.0.102"
-BoardID = "testID"
-SimpleBlink(Broker, BoardID).main()
+if __name__ == "__main__":
+    broker_ip = "192.168.0.100"
+    board_id = "board4"
+    SimpleMQTTBlink(broker_ip, board_id).main()

@@ -38,6 +38,6 @@ ThumbPython caches #
 __pycache__
 
 # PyCharm files #
-.idea
-.pyc
+*.idea
+*.pyc
 

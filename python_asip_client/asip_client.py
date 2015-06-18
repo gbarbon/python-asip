@@ -14,6 +14,10 @@ class AsipClient:
     # ************   BEGIN CONSTANTS DEFINITION ****************
     DEBUG = False  # Do you want me to print verbose debug information?
 
+    # Pin values
+    HIGH = 1
+    LOW = 0
+
     # Low-level tags for I/O service:
     IO_SERVICE = 'I'  # tag indicating message is for I/O service
     PIN_MODE = 'P'  # i/o request  to Arduino to set pin mode
