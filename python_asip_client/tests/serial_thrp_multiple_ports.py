@@ -11,10 +11,11 @@ class SerialThroughput(SerialBoard):
 
     def __init__(self):
         SerialBoard.__init__(self)
-        self.buttonPin = 2  # the number for the pushbutton pin on the Arduino
+        self.input_pins = [2, 3, 4, 5, 6, 7]  # numbers of the pins that will be set in input mode
         self.ledPin = 13  # the number for the LED pin on the Arduino
-        self.buttonState = self.asip.LOW
+        self.general_state = self.asip.LOW
         self.oldstate = self.asip.LOW
+        self.pin_states = [self.asip.LOW] * 6
 
         self.init_conn()
 
@@ -23,8 +24,9 @@ class SerialThroughput(SerialBoard):
         try:
             time.sleep(0.5)
             self.asip.set_pin_mode(self.ledPin, self.asip.OUTPUT)
-            time.sleep(0.5)
-            self.asip.set_pin_mode(self.buttonPin, self.asip.INPUT)
+            for pin in self.input_pins:
+                time.sleep(0.2)
+                self.asip.set_pin_mode(pin, self.asip.INPUT)
         except Exception as e:
             sys.stdout.write("Exception caught while setting pin mode: {}\n".format(e))
             self.thread_killer()
@@ -34,15 +36,15 @@ class SerialThroughput(SerialBoard):
         while True:
             try:
                 # check the value of the pin
-                self.buttonState = self.asip.digital_read(self.buttonPin)
+                self.general_state = self.state()
 
                 # check if the value is changed with respect to previous iteration
-                if self.buttonState != self.oldstate:
-                    if self.buttonState == 1:
+                if self.general_state != self.oldstate:
+                    if self.general_state == self.asip.HIGH:
                         self.asip.digital_write(self.ledPin, self.asip.HIGH)
                     else:
                         self.asip.digital_write(self.ledPin, self.asip.LOW)
-                self.oldstate = self.buttonState
+                self.oldstate = self.general_state
                 time.sleep(0.001)  # Needed for thread scheduling/concurrency
 
             except (KeyboardInterrupt, Exception) as e:
@@ -50,6 +52,23 @@ class SerialThroughput(SerialBoard):
                 self.thread_killer()
                 sys.exit()
 
+    def state(self):
+        #for i in self.input_pins:
+            #self.pin_states[self.input_pins.index(i)] = self.asip.digital_read(i)
+            #print("Pin {} has value {}".format(i,self.pin_states[self.input_pins.index(i)]))
+        big_pins = self.asip.get_digital_pins()
+        self.pin_states = big_pins[2:7]
+        if all(i == self.asip.LOW for i in self.pin_states):
+            #print("ALL LOW")
+            return self.asip.LOW
+        elif all(i == self.asip.HIGH for i in self.pin_states):
+            #print("ALL HIGH")
+            return self.asip.HIGH
+        else:
+            print("Something wrong!")
+            for i in self.input_pins:
+                print("Pin {} has value {}".format(i,self.pin_states[self.input_pins.index(i)]))
+            return self.oldstate
 
 # test LightSwitch
 if __name__ == "__main__":

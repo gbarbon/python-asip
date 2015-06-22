@@ -7,7 +7,7 @@ import time
 
 # A simple board with just the I/O services on a fixed port.
 # The main method simulates a light switch.
-class TCPLatency(TCPBoard):
+class TCPThroughput(TCPBoard):
 
     def __init__(self, IP):
         TCPBoard.__init__(self, IP)
@@ -53,5 +53,5 @@ class TCPLatency(TCPBoard):
 
 # test LightSwitch
 if __name__ == "__main__":
-    IP = "127.0.0.1"
-    TCPLatency(IP).main()
+    IP = "169.254.4.113"
+    TCPThroughput(IP).main()
