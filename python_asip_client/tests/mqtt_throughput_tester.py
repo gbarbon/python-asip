@@ -52,12 +52,9 @@ class MQTTWaveTester(SimpleMQTTBoard):
                 #print("I'm here")
             self.oldstate = self.buttonState
 
-
-
-
-# test SimpleBlink
-Broker = "192.168.0.100"
-BoardID = "test"
-MQTTWaveTester(Broker, BoardID).main()
-sys.stdout.write("Quitting!\n")
-os._exit(0)
+if __name__ == "__main__":
+    Broker = "192.168.0.100"
+    BoardID = "test"
+    MQTTWaveTester(Broker, BoardID).main()
+    sys.stdout.write("Quitting!\n")
+    os._exit(0)

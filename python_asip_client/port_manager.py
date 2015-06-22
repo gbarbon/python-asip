@@ -123,7 +123,7 @@ class PortManager:
         # bitmask = struct.unpack("h", input_str[7])[0] # convert to base 16
         # bitmask = binascii.b2a_hex(input_str[7])
         # bitmask = binascii.hexlify(input_str[7].encode('ascii'))
-        bitmask = int(input_str[7], 16)
+        bitmask = int(input_str[7:], 16)
 
         if self.__DEBUG:
             sys.stdout.write("DEBUG: port {} and bitmask {}\n".format(port,bitmask))

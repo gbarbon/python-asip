@@ -1,7 +1,7 @@
 __author__ = 'Gianluca Barbon'
 
 from asip_client import AsipClient
-from simple_mqtt_board import SimpleMQTTBoard
+from simple_serial_board import SimpleSerialBoard
 import sys
 import time
 import os # for kbhit
@@ -10,12 +10,12 @@ from kbhit import KBHit
 
 # A simple board with just the I/O services.
 # The main method does a standard blink test.
-class WaveTester(SimpleMQTTBoard):
+class SerialWaveTester(SimpleSerialBoard):
 
-    def __init__(self, Broker, BoardID):
-        SimpleMQTTBoard.__init__(self, Broker, BoardID)
+    def __init__(self):
+        SimpleSerialBoard.__init__(self)
         self.buttonPin = 2 # the number for the pushbutton pin on the Arduino
-        self.ledPin = 7  # the number for the LED pin on the Arduino
+        self.ledPin = 13  # the number for the LED pin on the Arduino
         self.buttonState = 0 # initialise the variable for when we press the button
 
         # read the current state of the button
@@ -52,13 +52,7 @@ class WaveTester(SimpleMQTTBoard):
                 #print("I'm here")
             self.oldstate = self.buttonState
 
-
-
-
-# test SimpleBlink
-Broker = "192.168.0.100"
-BoardID = "test"
-    #LightSwitchMQTT(Broker, BoardID).main()
-WaveTester(Broker, BoardID).main()
-sys.stdout.write("Quitting!\n")
-os._exit(0)
+if __name__ == "__main__":
+    SerialWaveTester().main()
+    sys.stdout.write("Quitting!\n")
+    os._exit(0)

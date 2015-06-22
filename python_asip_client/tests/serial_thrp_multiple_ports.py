@@ -1,16 +1,16 @@
 __author__ = 'Gianluca Barbon'
 
-from tcp_board import TCPBoard
+from serial_board import SerialBoard
 import sys
 import time
 
 
 # A simple board with just the I/O services on a fixed port.
-#  The main method simulates a light switch.
-class LightSwitchTCP(TCPBoard):
+# The main method simulates a light switch.
+class SerialThroughput(SerialBoard):
 
-    def __init__(self, IP):
-        TCPBoard.__init__(self, IP)
+    def __init__(self):
+        SerialBoard.__init__(self)
         self.buttonPin = 2  # the number for the pushbutton pin on the Arduino
         self.ledPin = 13  # the number for the LED pin on the Arduino
         self.buttonState = self.asip.LOW
@@ -24,7 +24,7 @@ class LightSwitchTCP(TCPBoard):
             time.sleep(0.5)
             self.asip.set_pin_mode(self.ledPin, self.asip.OUTPUT)
             time.sleep(0.5)
-            self.asip.set_pin_mode(self.buttonPin, self.asip.INPUT_PULLUP)
+            self.asip.set_pin_mode(self.buttonPin, self.asip.INPUT)
         except Exception as e:
             sys.stdout.write("Exception caught while setting pin mode: {}\n".format(e))
             self.thread_killer()
@@ -43,15 +43,14 @@ class LightSwitchTCP(TCPBoard):
                     else:
                         self.asip.digital_write(self.ledPin, self.asip.LOW)
                 self.oldstate = self.buttonState
-
-                time.sleep(0.005)  # Needed for thread scheduling/concurrency
+                time.sleep(0.001)  # Needed for thread scheduling/concurrency
 
             except (KeyboardInterrupt, Exception) as e:
                 sys.stdout.write("Caught exception in main loop: {}\n".format(e))
                 self.thread_killer()
                 sys.exit()
 
+
 # test LightSwitch
 if __name__ == "__main__":
-    IP = "192.168.0.100"
-    LightSwitchTCP(IP).main()
+    SerialThroughput().main()
