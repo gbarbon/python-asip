@@ -50,8 +50,6 @@ class MQTTThroughput(MQTTBoard):
                 self.thread_killer()
                 sys.exit()
 
-
-# test LightSwitch
 if __name__ == "__main__":
     broker_ip = "169.254.83.106"
     board_id = "board4"

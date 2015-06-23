@@ -50,8 +50,6 @@ class TCPThroughput(TCPBoard):
                 self.thread_killer()
                 sys.exit()
 
-
-# test LightSwitch
 if __name__ == "__main__":
     IP = "169.254.4.113"
     TCPThroughput(IP).main()

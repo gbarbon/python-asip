@@ -12,7 +12,5 @@ class PinTest(SerialBoard):
 
     # TODO
 
-
-# test LightSwitch
 if __name__ == "__main__":
     PinTest().main()

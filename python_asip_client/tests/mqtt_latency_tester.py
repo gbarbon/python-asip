@@ -77,7 +77,6 @@ class MQTTLatency(MQTTBoard):
             self.thread_killer()
             sys.exit(0)
 
-# test LightSwitch
 if __name__ == "__main__":
     broker_ip = "127.0.0.1"
     board_id = "board4"

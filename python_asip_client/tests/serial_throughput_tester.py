@@ -50,7 +50,5 @@ class SerialThroughput(SerialBoard):
                 self.thread_killer()
                 sys.exit()
 
-
-# test LightSwitch
 if __name__ == "__main__":
     SerialThroughput().main()

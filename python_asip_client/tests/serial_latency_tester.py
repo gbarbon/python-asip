@@ -76,6 +76,5 @@ class SerialLatency(SerialBoard):
             self.thread_killer()
             sys.exit(0)
 
-# test LightSwitch
 if __name__ == "__main__":
     SerialLatency().main()

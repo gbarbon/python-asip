@@ -1,16 +1,16 @@
 __author__ = 'Gianluca Barbon'
 
-from serial_board import SerialBoard
+from mqtt_board import MQTTBoard
 import sys
 import time
 
 
 # A simple board with just the I/O services on a fixed port.
 # The main method simulates a light switch.
-class SerialMultipleThroughput(SerialBoard):
+class MQTTMultipleThroughput(MQTTBoard):
 
-    def __init__(self):
-        SerialBoard.__init__(self)
+    def __init__(self, broker, board):
+        MQTTBoard.__init__(self, broker, board)
         self.input_pins = [2, 3, 4, 5, 6, 7]  # numbers of the pins that will be set in input mode
         self.ledPin = 13  # the number for the LED pin on the Arduino
         self.general_state = self.asip.LOW
@@ -54,16 +54,11 @@ class SerialMultipleThroughput(SerialBoard):
 
     # This method retrieves the state of pins
     def state(self):
-        #for i in self.input_pins:
-            #self.pin_states[self.input_pins.index(i)] = self.asip.digital_read(i)
-            #print("Pin {} has value {}".format(i,self.pin_states[self.input_pins.index(i)]))
         big_pins = self.asip.get_digital_pins()
         self.pin_states = big_pins[2:7]
         if all(i == self.asip.LOW for i in self.pin_states):
-            #print("ALL LOW")
             return self.asip.LOW
         elif all(i == self.asip.HIGH for i in self.pin_states):
-            #print("ALL HIGH")
             return self.asip.HIGH
         else:
             sys.stdout.write("Something wrong!\n")
@@ -72,4 +67,6 @@ class SerialMultipleThroughput(SerialBoard):
             return self.oldstate
 
 if __name__ == "__main__":
-    SerialMultipleThroughput().main()
+    broker_ip = "169.254.83.106"
+    board_id = "board4"
+    MQTTMultipleThroughput(broker_ip, board_id).main()
