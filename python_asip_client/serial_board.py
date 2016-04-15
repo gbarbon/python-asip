@@ -70,7 +70,7 @@ class SerialBoard:
                 while not self.asip.check_mapping():
                     self.asip.request_port_mapping()
                     time.sleep(0.5)
-                self.asip.set_auto_report_interval(0)
+                self.asip.set_auto_report_interval(100)
                 sys.stdout.write("Creating Threads: Mapping received, auto-report interval set to 0. Running now!\n")
             except KeyboardInterrupt:  # KeyboardInterrupt handling in order to close every thread correctly
                 sys.stdout.write("KeyboardInterrupt while checking mapping. Attempting to close listener thread.\n")
@@ -250,8 +250,8 @@ class SerialBoard:
                         "Caught SerialException in serial read: {}\nListener Thread will now stop\n".format(e))
                     self.stopper()
                 except Exception as e:
-                    sys.stdout.write("Caught exception: {}\nListener Thread will now stop\n".format(e))
-                    self.stopper()
+                    sys.stdout.write("Caught exception: {}\nListener Thread will NOT stop\n".format(e))
+                    #self.stopper()
 
             sys.stdout.write("Listener Thread: stopped\n")
 

@@ -118,30 +118,37 @@ class PortManager:
         if self.__DEBUG:
             sys.stdout.write("DEBUG: received input string is {}\n".format(input_str))
 
-        # We need to process port number and bit mask
-        port = int(input_str[5:6])
-        # bitmask = struct.unpack("h", input_str[7])[0] # convert to base 16
-        # bitmask = binascii.b2a_hex(input_str[7])
-        # bitmask = binascii.hexlify(input_str[7].encode('ascii'))
-        bitmask = int(input_str[7:], 16)
+        try:
 
-        if self.__DEBUG:
-            sys.stdout.write("DEBUG: port {} and bitmask {}\n".format(port,bitmask))
+          # We need to process port number and bit mask
+          port = int(input_str[5:6])
+          # bitmask = struct.unpack("h", input_str[7])[0] # convert to base 16
+          # bitmask = binascii.b2a_hex(input_str[7])
+          # bitmask = binascii.hexlify(input_str[7].encode('ascii'))
+          bitmask = int(input_str[7:], 16)
 
-        if port not in self.__port_mapping:
-            # this happens when the process_pin_mapping method has not been called yet
-            raise KeyError
-        single_port_map = self.__port_mapping[port]
+          if self.__DEBUG:
+              sys.stdout.write("DEBUG: port {} and bitmask {}\n".format(port,bitmask))
+  
+          if port not in self.__port_mapping:
+              # this happens when the process_pin_mapping method has not been called yet
+              raise KeyError
+          single_port_map = self.__port_mapping[port]
+  
+          for (key, value) in single_port_map.items():
+              if (key & bitmask) != 0x0:
+                  self.__digital_input_pins[value] = self.__HIGH
+                  if self.__DEBUG:
+                      sys.stdout.write("DEBUG: processPortData setting pin {} to HIGH\n".format(value))
+              else:
+                  self.__digital_input_pins[value] = self.__LOW
+                  if self.__DEBUG:
+                      sys.stdout.write("DEBUG: processPortData setting pin {} to LOW\n".format(value))
+        except:
+          if self.__DEBUG:
+            sys.stdout.write("DEBUG: Something wrong parsing port data")
 
-        for (key, value) in single_port_map.items():
-            if (key & bitmask) != 0x0:
-                self.__digital_input_pins[value] = self.__HIGH
-                if self.__DEBUG:
-                    sys.stdout.write("DEBUG: processPortData setting pin {} to HIGH\n".format(value))
-            else:
-                self.__digital_input_pins[value] = self.__LOW
-                if self.__DEBUG:
-                    sys.stdout.write("DEBUG: processPortData setting pin {} to LOW\n".format(value))
+
 
     # TODO: maybe merge this method with process_port_data
     def process_analog_data(self, input_str):
